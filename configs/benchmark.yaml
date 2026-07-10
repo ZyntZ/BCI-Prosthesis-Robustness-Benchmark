@@ -1,0 +1,5 @@
+# Initial benchmark configuration
+project_name: bci_prosthesis_robustness_benchmark
+moabb_data_dir: /workspace/bci_project_start/moabb_data
+results_dir: /workspace/bci_project_start/results
+random_seed: 20260709
