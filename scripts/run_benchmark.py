@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Run the first-pass BCI robustness benchmark on open MOABB datasets.
 
 Default mode is a dry run so the repository can be inspected without downloading
@@ -18,7 +19,6 @@ from moabb.datasets import PhysionetMI, BNCI2014_001
 from moabb.paradigms import LeftRightImagery
 from moabb.utils import set_download_dir
 
-# Allow running
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -97,7 +97,6 @@ def run_real_data(config: dict, dataset_name: str, subjects: list[int], max_subj
 
 
 def summarize(results: pd.DataFrame) -> pd.DataFrame:
-    # First average folds/repeats
     subj = (
         results.groupby(["dataset", "subject", "dropout_fraction"], as_index=False)
         .agg(roc_auc=("roc_auc", "mean"), balanced_accuracy=("balanced_accuracy", "mean"))
