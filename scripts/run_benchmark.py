@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Run the first-pass BCI robustness benchmark on open MOABB datasets.
+"""Run BCI robustness benchmarks on open MOABB datasets.
 
-Default mode is a dry run so the repository can be inspected without downloading
-large EEG files. Use `--download-and-run` to fetch real data.
+This version is resumable at the subject level and supports two stressors:
+1. test-time random channel dropout;
+2. reduced electrode montages trained/tested on smaller channel sets.
 """
 
 from __future__ import annotations
@@ -15,15 +16,19 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from moabb.datasets import PhysionetMI, BNCI2014_001
+from moabb.datasets import BNCI2014_001, PhysionetMI
 from moabb.paradigms import LeftRightImagery
 from moabb.utils import set_download_dir
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from bci_robustness.core import evaluate_subject_with_dropout, subject_bootstrap_ci
-
+from bci_robustness.core import (
+    evaluate_subject_reduced_montages,
+    evaluate_subject_with_dropout,
+    population_summary,
+    subject_level_summary,
+)
 
 DATASET_REGISTRY = {
     "PhysionetMI": PhysionetMI,
@@ -47,6 +52,14 @@ def instantiate_dataset(name: str, subjects: list[int] | None = None):
     return cls()
 
 
+def config_montages(config: dict) -> dict[str, list[str]]:
+    reduced_cfg = config.get("stressors", {}).get("reduced_montage", {})
+    montages = {}
+    for item in reduced_cfg.get("montages", []):
+        montages[item["name"]] = list(item["channels"])
+    return montages
+
+
 def dry_run(config: dict) -> None:
     print("Dry run only: no EEG data will be downloaded.")
     print(json.dumps(config, indent=2, ensure_ascii=False))
@@ -59,63 +72,101 @@ def dry_run(config: dict) -> None:
             print(f"- {key}: metadata unavailable ({exc})")
 
 
-def run_real_data(config: dict, dataset_name: str, subjects: list[int], max_subjects: int | None) -> pd.DataFrame:
+def run_one_subject(
+    dataset,
+    paradigm,
+    subject: int,
+    config: dict,
+    include_reduced_montage: bool,
+) -> pd.DataFrame:
+    seed = int(config["random_seed"])
+    dropout_cfg = config["stressors"]["channel_dropout"]
+    fractions = [0.0] + [float(x) for x in dropout_cfg["dropout_fractions"]]
+    repeats = int(dropout_cfg["repeats_per_fraction"])
+    csp_components = int(config["pipelines"][0].get("csp_components", 6))
+
+    epochs, y, metadata = paradigm.get_data(dataset=dataset, subjects=[subject], return_epochs=True)
+    X = epochs.get_data(copy=True)
+    channel_names = list(epochs.ch_names)
+    print(f"  X={X.shape}, classes={sorted(set(y))}, channels={len(channel_names)}")
+
+    frames = []
+    dropout = evaluate_subject_with_dropout(
+        X=X,
+        y=y,
+        subject_id=subject,
+        dropout_fractions=fractions,
+        repeats_per_fraction=repeats,
+        random_seed=seed,
+        csp_components=csp_components,
+        montage_name="all_channels",
+        n_channels=X.shape[1],
+    )
+    frames.append(dropout)
+
+    if include_reduced_montage and config.get("stressors", {}).get("reduced_montage", {}).get("enabled", False):
+        montages = config_montages(config)
+        reduced = evaluate_subject_reduced_montages(
+            X=X,
+            y=y,
+            channel_names=channel_names,
+            subject_id=subject,
+            montages=montages,
+            random_seed=seed,
+            csp_components=csp_components,
+        )
+        frames.append(reduced)
+
+    out = pd.concat(frames, ignore_index=True)
+    out.insert(0, "dataset", dataset.code)
+    return out
+
+
+def run_real_data(
+    config: dict,
+    dataset_name: str,
+    subjects: list[int],
+    max_subjects: int | None,
+    include_reduced_montage: bool,
+    overwrite: bool,
+) -> pd.DataFrame:
     set_download_dir(config["moabb_data_dir"])
-    dataset = instantiate_dataset(dataset_name, subjects=subjects)
-    if subjects:
-        subject_list = subjects
-    else:
-        subject_list = list(dataset.subject_list)
+    dataset = instantiate_dataset(dataset_name, subjects=subjects if subjects else None)
+    subject_list = subjects if subjects else list(dataset.subject_list)
     if max_subjects is not None:
         subject_list = subject_list[:max_subjects]
 
     paradigm = LeftRightImagery(fmin=8, fmax=32, resample=128)
-    dropout_cfg = config["stressors"]["channel_dropout"]
-    fractions = [0.0] + [float(x) for x in dropout_cfg["dropout_fractions"]]
-    repeats = int(dropout_cfg["repeats_per_fraction"])
-    seed = int(config["random_seed"])
-    csp_components = int(config["pipelines"][0].get("csp_components", 6))
+    checkpoint_dir = Path(config["results_dir"]) / "checkpoints"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     all_rows = []
     for subject in subject_list:
-        print(f"Loading subject {subject} from {dataset.code}...")
-        X, y, metadata = paradigm.get_data(dataset=dataset, subjects=[subject])
-        print(f"  X={X.shape}, classes={sorted(set(y))}")
-        df = evaluate_subject_with_dropout(
-            X=X,
-            y=y,
-            subject_id=subject,
-            dropout_fractions=fractions,
-            repeats_per_fraction=repeats,
-            random_seed=seed,
-            csp_components=csp_components,
-        )
-        df.insert(0, "dataset", dataset.code)
+        ckpt = checkpoint_dir / f"{dataset_name}_subject-{subject:03d}_robustness.csv"
+        if ckpt.exists() and not overwrite:
+            print(f"Reusing checkpoint: {ckpt}")
+            df = pd.read_csv(ckpt)
+        else:
+            print(f"Loading subject {subject} from {dataset.code}...")
+            df = run_one_subject(dataset, paradigm, subject, config, include_reduced_montage)
+            df.to_csv(ckpt, index=False)
+            print(f"  wrote checkpoint {ckpt}")
         all_rows.append(df)
-    results = pd.concat(all_rows, ignore_index=True)
-    return results
+    return pd.concat(all_rows, ignore_index=True)
 
 
-def summarize(results: pd.DataFrame) -> pd.DataFrame:
-    subj = (
-        results.groupby(["dataset", "subject", "dropout_fraction"], as_index=False)
-        .agg(roc_auc=("roc_auc", "mean"), balanced_accuracy=("balanced_accuracy", "mean"))
-    )
-    rows = []
-    for (dataset, frac), g in subj.groupby(["dataset", "dropout_fraction"]):
-        lo, hi = subject_bootstrap_ci(g["roc_auc"].to_numpy())
-        rows.append(
-            {
-                "dataset": dataset,
-                "dropout_fraction": frac,
-                "n_subjects": g["subject"].nunique(),
-                "mean_roc_auc": g["roc_auc"].mean(),
-                "roc_auc_ci_low": lo,
-                "roc_auc_ci_high": hi,
-                "mean_balanced_accuracy": g["balanced_accuracy"].mean(),
-            }
-        )
-    return pd.DataFrame(rows).sort_values(["dataset", "dropout_fraction"])
+def write_outputs(results: pd.DataFrame, config: dict, dataset_name: str, suffix: str) -> tuple[Path, Path, Path]:
+    results_dir = Path(config["results_dir"])
+    results_dir.mkdir(parents=True, exist_ok=True)
+    raw_path = results_dir / f"{dataset_name}_{suffix}_results.csv"
+    subject_path = results_dir / f"{dataset_name}_{suffix}_subject_summary.csv"
+    summary_path = results_dir / f"{dataset_name}_{suffix}_population_summary.csv"
+    results.to_csv(raw_path, index=False)
+    subj = subject_level_summary(results)
+    subj.to_csv(subject_path, index=False)
+    summary = population_summary(results, random_seed=int(config["random_seed"]))
+    summary.to_csv(summary_path, index=False)
+    return raw_path, subject_path, summary_path
 
 
 def main() -> None:
@@ -126,6 +177,9 @@ def main() -> None:
     parser.add_argument("--dataset", default="PhysionetMI")
     parser.add_argument("--subjects", type=int, nargs="*", default=[1], help="Subject IDs to run. Default: subject 1 smoke test.")
     parser.add_argument("--max-subjects", type=int, default=None)
+    parser.add_argument("--include-reduced-montage", action="store_true", help="Run reduced montage stressors from config.")
+    parser.add_argument("--overwrite", action="store_true", help="Recompute existing subject checkpoints.")
+    parser.add_argument("--suffix", default="robustness", help="Output filename suffix.")
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -133,17 +187,19 @@ def main() -> None:
         dry_run(config)
         return
 
-    results_dir = Path(config["results_dir"])
-    results_dir.mkdir(parents=True, exist_ok=True)
-    results = run_real_data(config, args.dataset, args.subjects, args.max_subjects)
-    raw_path = results_dir / f"{args.dataset}_dropout_results.csv"
-    summary_path = results_dir / f"{args.dataset}_dropout_summary.csv"
-    results.to_csv(raw_path, index=False)
-    summary = summarize(results)
-    summary.to_csv(summary_path, index=False)
-    print("\nSubject-level summary:")
-    print(summary.to_string(index=False))
+    results = run_real_data(
+        config=config,
+        dataset_name=args.dataset,
+        subjects=args.subjects,
+        max_subjects=args.max_subjects,
+        include_reduced_montage=args.include_reduced_montage,
+        overwrite=args.overwrite,
+    )
+    raw_path, subject_path, summary_path = write_outputs(results, config, args.dataset, args.suffix)
+    print("\nPopulation summary:")
+    print(pd.read_csv(summary_path).to_string(index=False))
     print(f"\nWrote {raw_path}")
+    print(f"Wrote {subject_path}")
     print(f"Wrote {summary_path}")
 
 
