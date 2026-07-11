@@ -1,0 +1,6 @@
+dataset,dropout_fraction,n_subjects,mean_roc_auc,roc_auc_ci_low,roc_auc_ci_high,mean_balanced_accuracy
+PhysionetMotorImagery,0.0,1,0.73,,,0.7050000000000001
+PhysionetMotorImagery,0.1,1,0.6135,,,0.50075
+PhysionetMotorImagery,0.2,1,0.5385,,,0.51875
+PhysionetMotorImagery,0.3,1,0.5805,,,0.513
+PhysionetMotorImagery,0.5,1,0.56975,,,0.5195000000000001
