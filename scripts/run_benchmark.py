@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from bci_robustness.core import (
     evaluate_subject_reduced_montages,
+    evaluate_subject_region_dropout,
     evaluate_subject_with_dropout,
     population_summary,
     subject_level_summary,
@@ -78,6 +79,8 @@ def run_one_subject(
     subject: int,
     config: dict,
     include_reduced_montage: bool,
+    include_region_dropout: bool = False,
+    pipeline_name: str = "csp_lda",
 ) -> pd.DataFrame:
     seed = int(config["random_seed"])
     dropout_cfg = config["stressors"]["channel_dropout"]
@@ -99,6 +102,7 @@ def run_one_subject(
         repeats_per_fraction=repeats,
         random_seed=seed,
         csp_components=csp_components,
+        pipeline_name=pipeline_name,
         montage_name="all_channels",
         n_channels=X.shape[1],
     )
@@ -114,8 +118,24 @@ def run_one_subject(
             montages=montages,
             random_seed=seed,
             csp_components=csp_components,
+            pipeline_name=pipeline_name,
         )
         frames.append(reduced)
+
+    if include_region_dropout:
+        region_cfg = config.get("stressors", {}).get("region_dropout", {})
+        region_names = region_cfg.get("regions", ["left_motor_strip", "midline_motor_strip", "right_motor_strip"])
+        region = evaluate_subject_region_dropout(
+            X=X,
+            y=y,
+            channel_names=channel_names,
+            subject_id=subject,
+            region_names=region_names,
+            random_seed=seed,
+            csp_components=csp_components,
+            pipeline_name=pipeline_name,
+        )
+        frames.append(region)
 
     out = pd.concat(frames, ignore_index=True)
     out.insert(0, "dataset", dataset.code)
@@ -128,6 +148,8 @@ def run_real_data(
     subjects: list[int],
     max_subjects: int | None,
     include_reduced_montage: bool,
+    include_region_dropout: bool,
+    pipeline_name: str,
     overwrite: bool,
 ) -> pd.DataFrame:
     set_download_dir(config["moabb_data_dir"])
@@ -148,7 +170,7 @@ def run_real_data(
             df = pd.read_csv(ckpt)
         else:
             print(f"Loading subject {subject} from {dataset.code}...")
-            df = run_one_subject(dataset, paradigm, subject, config, include_reduced_montage)
+            df = run_one_subject(dataset, paradigm, subject, config, include_reduced_montage, include_region_dropout, pipeline_name)
             df.to_csv(ckpt, index=False)
             print(f"  wrote checkpoint {ckpt}")
         all_rows.append(df)
@@ -178,6 +200,8 @@ def main() -> None:
     parser.add_argument("--subjects", type=int, nargs="*", default=[1], help="Subject IDs to run. Default: subject 1 smoke test.")
     parser.add_argument("--max-subjects", type=int, default=None)
     parser.add_argument("--include-reduced-montage", action="store_true", help="Run reduced montage stressors from config.")
+    parser.add_argument("--include-region-dropout", action="store_true", help="Run named region dropout stressors from config/core defaults.")
+    parser.add_argument("--pipeline", default="csp_lda", choices=["csp_lda", "riemann_lr", "tangent_space_lr"], help="Decoder pipeline to benchmark.")
     parser.add_argument("--overwrite", action="store_true", help="Recompute existing subject checkpoints.")
     parser.add_argument("--suffix", default="robustness", help="Output filename suffix.")
     args = parser.parse_args()
@@ -193,6 +217,8 @@ def main() -> None:
         subjects=args.subjects,
         max_subjects=args.max_subjects,
         include_reduced_montage=args.include_reduced_montage,
+        include_region_dropout=args.include_region_dropout,
+        pipeline_name=args.pipeline,
         overwrite=args.overwrite,
     )
     raw_path, subject_path, summary_path = write_outputs(results, config, args.dataset, args.suffix)
