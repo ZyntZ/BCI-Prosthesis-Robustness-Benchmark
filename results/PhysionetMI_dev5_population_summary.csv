@@ -1,8 +1,0 @@
-dataset,pipeline,stressor,montage,dropout_fraction,n_subjects,mean_roc_auc,roc_auc_ci_low,roc_auc_ci_high,mean_balanced_accuracy,balanced_accuracy_ci_low,balanced_accuracy_ci_high,mean_n_channels
-PhysionetMotorImagery,csp_lda,channel_dropout,all_channels,0.1,5,0.595,0.5357999999999999,0.7186865235540132,0.5353999999999999,0.5133,0.5715999999999999,64.0
-PhysionetMotorImagery,csp_lda,channel_dropout,all_channels,0.2,5,0.5337,0.485962106260998,0.6118,0.5129,0.5031206390471249,0.5196,64.0
-PhysionetMotorImagery,csp_lda,channel_dropout,all_channels,0.3,5,0.5636,0.5109037920392726,0.6345000000000001,0.5210000000000001,0.5088000000000001,0.5377,64.0
-PhysionetMotorImagery,csp_lda,channel_dropout,all_channels,0.5,5,0.5177,0.46990000000000004,0.5709000000000001,0.5015000000000001,0.48713489449597075,0.51,64.0
-PhysionetMotorImagery,csp_lda,clean,all_channels,0.0,5,0.692,0.5919999999999999,0.8682772855701487,0.6460000000000001,0.538,0.826,64.0
-PhysionetMotorImagery,csp_lda,reduced_montage,motor_core,0.0,5,0.686,0.5920000000000001,0.8,0.6220000000000001,0.548,0.7260000000000001,3.0
-PhysionetMotorImagery,csp_lda,reduced_montage,motor_extended,0.0,5,0.736,0.5800000000000001,0.89,0.7090000000000001,0.603,0.8359999999999999,9.0
