@@ -263,3 +263,122 @@ def population_summary(results: pd.DataFrame, random_seed: int = 20260709) -> pd
         )
         rows.append(row)
     return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
+
+
+# ---- Next-stage robustness utilities: optional Riemannian baseline and spatial dropout ----
+
+def make_riemannian_logreg(random_state: int = 20260709):
+    """Create an optional Riemannian covariance baseline.
+
+    Requires pyriemann. This is intentionally optional so the CSP+LDA pipeline
+    remains usable in minimal environments. It returns a sklearn Pipeline:
+    Covariances -> TangentSpace -> LogisticRegression.
+    """
+    try:
+        from pyriemann.estimation import Covariances
+        from pyriemann.tangentspace import TangentSpace
+        from sklearn.linear_model import LogisticRegression
+    except Exception as exc:  # pragma: no cover
+        raise ImportError(
+            "Riemannian baseline requires pyriemann. Install with `python -m pip install pyriemann`."
+        ) from exc
+    return Pipeline(
+        steps=[
+            ("cov", Covariances(estimator="oas")),
+            ("ts", TangentSpace(metric="riemann")),
+            ("lr", LogisticRegression(max_iter=2000, random_state=random_state)),
+        ]
+    )
+
+
+def make_pipeline_by_name(name: str, csp_components: int = 6, random_state: int = 20260709):
+    """Factory for benchmark pipelines."""
+    name = str(name).lower()
+    if name in {"csp_lda", "csp+lda"}:
+        return make_csp_lda(n_components=csp_components, random_state=random_state)
+    if name in {"riemann_lr", "tangent_space_lr", "riemannian_logreg"}:
+        return make_riemannian_logreg(random_state=random_state)
+    raise ValueError(f"Unknown pipeline name: {name}")
+
+
+MOTOR_REGION_CHANNELS = {
+    "left_motor_strip": ["FC5", "FC3", "FC1", "C5", "C3", "C1", "CP5", "CP3", "CP1"],
+    "midline_motor_strip": ["FCz", "Cz", "CPz"],
+    "right_motor_strip": ["FC2", "FC4", "FC6", "C2", "C4", "C6", "CP2", "CP4", "CP6"],
+    "central_motor_9": ["FC3", "FCz", "FC4", "C3", "Cz", "C4", "CP3", "CPz", "CP4"],
+}
+
+
+def apply_named_region_dropout(
+    X: np.ndarray,
+    channel_names: Sequence[str],
+    region_name: str,
+    region_channels: dict[str, Sequence[str]] | None = None,
+) -> tuple[np.ndarray, list[str], list[int]]:
+    """Zero a physiologically grouped channel region, e.g. left motor strip.
+
+    This is a stronger deployment stressor than independent random channel loss:
+    it approximates cap displacement, local cable failure, or a bad-electrode cluster.
+    """
+    region_channels = region_channels or MOTOR_REGION_CHANNELS
+    if region_name not in region_channels:
+        raise ValueError(f"Unknown region {region_name!r}. Known regions: {sorted(region_channels)}")
+    present = [ch for ch in region_channels[region_name] if ch in channel_names]
+    if not present:
+        raise ValueError(f"No channels for region {region_name!r} are present in this dataset")
+    idx = channel_indices(channel_names, present)
+    X2 = np.asarray(X).copy()
+    X2[:, idx, :] = 0.0
+    return X2, present, idx
+
+
+def evaluate_subject_region_dropout(
+    X: np.ndarray,
+    y: np.ndarray,
+    channel_names: Sequence[str],
+    subject_id: str | int,
+    region_names: Sequence[str] = ("left_motor_strip", "midline_motor_strip", "right_motor_strip"),
+    n_splits: int = 5,
+    random_seed: int = 20260709,
+    csp_components: int = 6,
+    pipeline_name: str = "csp_lda",
+) -> pd.DataFrame:
+    """Evaluate test-time region dropout for one subject.
+
+    Training remains clean. Test folds are corrupted by zeroing a named channel
+    region. This function is ready for the next full benchmark run; it does not
+    invent data and only operates on supplied EEG arrays.
+    """
+    X = np.asarray(X)
+    y = np.asarray(y)
+    if len(np.unique(y)) != 2:
+        raise ValueError("This evaluator expects exactly two classes")
+    _, counts = np.unique(y, return_counts=True)
+    n_splits_eff = min(int(n_splits), int(counts.min()))
+    if n_splits_eff < 2:
+        raise ValueError("Need at least two samples per class for cross-validation")
+    cv = StratifiedKFold(n_splits=n_splits_eff, shuffle=True, random_state=random_seed)
+    rows = []
+    for fold, (train_idx, test_idx) in enumerate(cv.split(X, y), start=1):
+        clf = make_pipeline_by_name(pipeline_name, csp_components=min(csp_components, X.shape[1]), random_state=random_seed)
+        clf.fit(X[train_idx], y[train_idx])
+        y_test = y[test_idx]
+        for region_name in region_names:
+            X_eval, dropped_names, dropped_idx = apply_named_region_dropout(X[test_idx], channel_names, region_name)
+            auc, bal_acc = _score_fold(clf, X_eval, y_test)
+            rows.append({
+                "subject": subject_id,
+                "pipeline": pipeline_name,
+                "stressor": "region_dropout",
+                "montage": "all_channels",
+                "fold": fold,
+                "dropout_fraction": len(dropped_idx) / X.shape[1],
+                "repeat": 0,
+                "region": region_name,
+                "dropped_channels": ",".join(dropped_names),
+                "n_channels": int(X.shape[1]),
+                "n_dropped_channels": int(len(dropped_idx)),
+                "balanced_accuracy": bal_acc,
+                "roc_auc": auc,
+            })
+    return pd.DataFrame(rows)
