@@ -1,5 +1,57 @@
-# Initial benchmark configuration
 project_name: bci_prosthesis_robustness_benchmark
-moabb_data_dir: /workspace/bci_project_start/moabb_data
-results_dir: /workspace/bci_project_start/results
+moabb_data_dir: /workspace/bci_project_dev/moabb_data
+results_dir: /workspace/bci_project_dev/results
 random_seed: 20260709
+datasets:
+- name: PhysionetMI
+  paradigm: LeftRightImagery
+  note: PhysioNet EEG Motor Movement/Imagery, 109 volunteers; open access through
+    PhysioNet/MOABB.
+pipelines:
+- name: csp_lda
+  description: Classical Common Spatial Patterns + Linear Discriminant Analysis baseline.
+  csp_components: 6
+- name: tangent_space_lr
+  description: Covariance features on Riemannian tangent space + logistic regression,
+    if pyriemann is available.
+stressors:
+  channel_dropout:
+    enabled: true
+    dropout_fractions:
+    - 0.1
+    - 0.2
+    - 0.3
+    - 0.5
+    repeats_per_fraction: 10
+  reduced_montage:
+    enabled: true
+    montages:
+    - name: motor_core
+      channels:
+      - C3
+      - Cz
+      - C4
+    - name: motor_extended
+      channels:
+      - FC3
+      - FCz
+      - FC4
+      - C3
+      - Cz
+      - C4
+      - CP3
+      - CPz
+      - CP4
+  cross_session:
+    enabled: true
+    evaluation: train_first_session_test_later_sessions_when_available
+statistics:
+  primary_metric: roc_auc
+  secondary_metrics:
+  - balanced_accuracy
+  - calibration_error
+  confidence_intervals: bootstrap_subject_level
+  bootstrap_repeats: 2000
+  primary_model: mixed_effects_subject_random_intercept
+  multiple_comparisons: benjamini_hochberg_fdr
+  alpha: 0.05
