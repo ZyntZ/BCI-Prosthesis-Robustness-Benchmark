@@ -55,7 +55,7 @@ Continuation added a writable project copy, subject-level checkpointing, reduced
 Important limitation: n=10 is a development run, not the final manuscript sample. Full analysis should scale to all accessible subjects and then repeat on at least one additional dataset.
 
 
-## update: intervention recommendation layer
+## Next-stage update: intervention recommendation layer
 
 This repository now includes a stronger publishable layer beyond robustness curves:
 
@@ -81,4 +81,4 @@ Next benchmark run with new hooks:
 python scripts/run_benchmark.py   --config configs/benchmark.yaml   --download-and-run   --dataset PhysionetMI   --subjects 1 2 3 4 5 6 7 8 9 10   --include-reduced-montage   --include-region-dropout   --pipeline csp_lda   --suffix dev10_region
 ```
 
-Current evidence is a development run only (n=10). 
+Current evidence is a development run only (n=10). Do not treat it as a final manuscript-level estimate.
