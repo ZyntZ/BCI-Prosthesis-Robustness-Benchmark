@@ -1,0 +1,14 @@
+{
+  "prefix": "BNCI2014-001_BNCI2014_001_all_csp_lda",
+  "n_subjects": 9,
+  "source_csv": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_subject_summary.csv",
+  "outputs": {
+    "subject_level_metrics": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_subject_level_metrics.csv",
+    "population_metrics": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_population_metrics.csv",
+    "subject_wide_metrics": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_subject_wide_metrics.csv",
+    "paired_sensitivity": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_paired_sensitivity.csv",
+    "intervention_classes": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_intervention_classes.csv",
+    "intervention_class_rates": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_intervention_class_rates.csv",
+    "mixed_effects": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_final_mixed_effects.csv"
+  }
+}
