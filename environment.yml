@@ -1,0 +1,18 @@
+name: interference-resistant-eeg-benchmark
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.10
+  - pip
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - statsmodels
+  - mne
+  - moabb
+  - pyriemann
+  - pyyaml
+  - matplotlib
+  - seaborn
+  - plotly

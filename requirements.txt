@@ -1,0 +1,12 @@
+# Reproducible benchmark dependencies
+pandas
+scipy
+scikit-learn
+statsmodels
+mne
+moabb
+pyriemann
+PyYAML
+matplotlib
+seaborn
+plotly
