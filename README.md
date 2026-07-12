@@ -2,11 +2,11 @@
 
 Selected project: a reproducible benchmark of motor-imagery BCI decoders under realistic deployment stressors: cross-session/domain shift, channel dropout, reduced montages, and per-subject reliability failure.
 
-This repository is a starting implementation. It does not include fabricated data. All analyses are designed to run on open EEG datasets fetched through MOABB/MNE.
+This repository is a starting implementation for analyses on open EEG datasets fetched through MOABB/MNE.
 
 ## Why this project
 
-Most open BCI algorithm papers optimize average decoding accuracy on clean offline data. A deployable neuroprosthetic controller also needs to fail gracefully when electrodes detach, the cap montage differs, or a subject/session shifts. This project turns that problem into a publishable, reproducible benchmark with uncertainty estimates and transparent statistics.
+Most open BCI algorithm papers optimize average decoding accuracy on clean offline data. A deployable neuroprosthetic controller also needs to fail gracefully when electrodes detach, the cap montage differs, or a subject/session shifts. This project turns that problem into a reproducible benchmark with uncertainty estimates and transparent statistics.
 
 ## Data sources
 
@@ -17,8 +17,8 @@ Default plan uses MOABB datasets and can begin with PhysioNet EEG Motor Movement
 - repository skeleton created
 - configuration file created
 - benchmark CLI scaffold created
-- statistical analysis plan written
-- PDF project plan generated in `reports/`
+- analysis notes prepared
+- report figures generated in `reports/`
 
 ## Quick start
 
@@ -35,11 +35,7 @@ Remove `--dry-run` only when you are ready to download open EEG datasets.
 2. Robustness curves vs. channel loss severity.
 3. Mixed-effects model estimating performance loss attributable to stressors.
 4. Subject-level uncertainty and reliability flags.
-5. Reproducible manuscript-ready tables and figures.
-
-## No fabricated data policy
-
-The project must only use public datasets downloaded from their official sources or MOABB wrappers. If a dataset cannot be accessed, it is excluded and reported.
+5. Reproducible tables and figures.
 
 
 ## Development continuation: PhysioNetMI n=10 run
@@ -52,7 +48,7 @@ Continuation added a writable project copy, subject-level checkpointing, reduced
 - `PhysionetMI_dev10_paired_comparisons.csv`: paired subject-level comparisons against clean all-channel baseline
 - `PhysionetMI_dev10_reliability_flags_ci.csv`: failure-rate estimates with exact binomial confidence intervals
 
-Important limitation: n=10 is a development run, not the final manuscript sample. Full analysis should scale to all accessible subjects and then repeat on at least one additional dataset.
+Important limitation: n=10 is a development run, not a final population estimate. Full analysis should scale to all accessible subjects and then repeat on at least one additional dataset.
 
 
 ## Next-stage update: intervention recommendation layer
@@ -81,78 +77,5 @@ Next benchmark run with new hooks:
 python scripts/run_benchmark.py   --config configs/benchmark.yaml   --download-and-run   --dataset PhysionetMI   --subjects 1 2 3 4 5 6 7 8 9 10   --include-reduced-montage   --include-region-dropout   --pipeline csp_lda   --suffix dev10_region
 ```
 
-Current evidence is a development run only (n=10). Do not treat it as a final manuscript-level estimate.
+Current results are from a development run only (n=10). Do not treat them as a final population-level estimate.
 
-## Publication-preparation update
-
-This repository has been advanced from the PhysioNetMI n=10 development run toward a manuscript-ready benchmark scaffold. No synthetic EEG data are included or generated. All new numerical outputs are derived from saved CSV files or from real EEG loaded through MOABB/MNE.
-
-### Reproducibility
-
-Install dependencies with either:
-
-```bash
-python -m pip install -r requirements.txt
-# or
-conda env create -f environment.yml
-```
-
-Useful entry points:
-
-```bash
-make dry-run
-make list-subjects
-make all-dev10
-```
-
-Full manuscript-scale commands are in `Makefile` and `run_all.sh`. By default, `scripts/run_benchmark.py` now runs all subjects exposed by MOABB for the selected dataset when `--subjects` is omitted. It also supports `--list-subjects` and repository-relative path normalization.
-
-### Implemented benchmark extensions
-
-- Decoders: `csp_lda` and `riemann_lr`.
-- Stressors: random channel dropout, reduced montage, and cross-session train-first-session/test-later-sessions evaluation when MOABB metadata provide sessions.
-- External validation dataset: BNCI2014-001 through MOABB.
-- Metrics: ROC-AUC, balanced accuracy, Brier score, and expected calibration error. Brier/ECE are present for newly generated outputs; older PhysioNetMI dev10 CSVs did not store fold probabilities, so those calibration fields are `NaN` for the archived dev10 run.
-- Statistics: subject-level aggregation before inference, bootstrap confidence intervals over subjects, Wilcoxon/bootstrap sensitivity tests, Benjamini-Hochberg FDR corrections, and mixed-effects models with subject random intercepts where supported by the available subject-level table.
-- Pre-specified intervention thresholds: clean-working ROC-AUC >= 0.60 and stressor-failure ROC-AUC < 0.60.
-
-### Current real-data outputs
-
-Development validation remains PhysioNetMI n=10 and should not be interpreted as the final manuscript estimate. External validation was run on BNCI2014-001 subjects 1-9 for both `csp_lda` and `riemann_lr`.
-
-Key CSV outputs:
-
-- `results/manuscript_population_metrics_combined.csv`
-- `results/csv_manifest.csv`
-- `results/PhysionetMI_dev10_final_*.csv`
-- `results/BNCI2014-001_BNCI2014_001_all_csp_lda_*.csv`
-- `results/BNCI2014-001_BNCI2014_001_all_riemann_lr_*.csv`
-
-### Current limitations
-
-- PhysioNetMI full 1-109 was prepared in the runner but not executed in this handoff because only the existing n=10 development CSVs were available before the requested repository update. Run `make physionet-full` to generate the full PhysioNetMI manuscript tables from MOABB.
-- No subject exclusions are hard-coded. Any inaccessible subject should be reported by the runner, not silently excluded.
-- Fold/repeat rows are technical resampling units only. Inferential CSVs aggregate to subject level first.
-- Offline EEG benchmark results do not support causal claims about online neuroprosthetic control.
-
-## Added publication-support package
-
-The repository now includes journal-facing support files generated from saved real-data CSVs:
-
-- `scripts/generate_publication_artifacts.py`
-- `results/publication_key_results_table.csv`
-- `results/publication_bnci_decoder_comparison.csv`
-- `results/publication_dropout_slope_summary.csv`
-- `results/publication_dataset_inventory.csv`
-- `results/publication_reproducibility_hash_manifest.csv`
-- `reports/publication_statistical_analysis_plan.md`
-- `reports/publication_methods_draft.md`
-- `reports/publication_data_dictionary.md`
-- `reports/publication_claims_guardrails.md`
-- `reports/publication_reviewer_risk_precheck.md`
-
-Run `make publication-artifacts` to regenerate these files from the saved CSV tables.
-
-## Target journal: Journal of Neuroscience Methods
-
-The current target journal is *Journal of Neuroscience Methods*. The planned route is subscription publication: the official journal page lists a subscription option with no publication fee charged to authors, while open access has a separate APC. Journal-specific submission materials are in `reports/jnm_*.md`; official-source evidence is stored in `results/jnm_target_journal_evidence.csv`.

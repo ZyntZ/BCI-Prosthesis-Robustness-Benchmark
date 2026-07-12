@@ -185,7 +185,7 @@ def write_dashboard(wide: pd.DataFrame, cards: pd.DataFrame, paired: pd.DataFram
 <style>body{{font-family:Arial, sans-serif; max-width:1200px; margin:30px auto; line-height:1.35}} table{{border-collapse:collapse; font-size:13px}} th,td{{border:1px solid #ccc; padding:4px 6px}} th{{background:#e8f1f8}} .note{{background:#fff8e1; padding:10px; border-left:4px solid #f0b400}}</style></head>
 <body>
 <h1>Intervention-Robust EEG Benchmark dashboard</h1>
-<div class='note'>All numbers are derived from real PhysioNetMI dev-run outputs. No simulated or fabricated data are used. n=10 is a development run, not the final manuscript sample.</div>
+<div class='note'>PhysioNetMI n=10 is a development run, not a final population-level estimate.</div>
 <h2>Subject risk cards</h2>
 {cards.round(4).to_html(index=False)}
 <h2>Failure-rate estimates</h2>

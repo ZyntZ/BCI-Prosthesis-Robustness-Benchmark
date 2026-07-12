@@ -41,7 +41,7 @@
     "PhysioNetMI subjects 1-109 full run; runner prepared as make physionet-full"
   ],
   "primary_outputs": [
-    "results/manuscript_population_metrics_combined.csv",
+    "results/csv_manifest.csv",
     "results/csv_manifest.csv"
   ]
 }
