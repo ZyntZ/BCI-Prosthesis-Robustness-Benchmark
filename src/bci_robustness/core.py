@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import bootstrap
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.metrics import balanced_accuracy_score, roc_auc_score
+from sklearn.metrics import balanced_accuracy_score, brier_score_loss, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
 
@@ -81,23 +81,63 @@ def select_channels(X: np.ndarray, channel_names: Sequence[str], wanted: Sequenc
     return np.asarray(X)[:, idx, :], [channel_names[i] for i in idx], idx
 
 
-def _binary_scores(estimator, X_test: np.ndarray) -> np.ndarray:
-    """Return continuous scores for binary ROC-AUC."""
+def _binary_scores(estimator, X_test: np.ndarray) -> tuple[np.ndarray, bool]:
+    """Return continuous positive-class scores and whether they are probabilities."""
     if hasattr(estimator, "predict_proba"):
-        return estimator.predict_proba(X_test)[:, 1]
+        return estimator.predict_proba(X_test)[:, 1], True
     if hasattr(estimator, "decision_function"):
-        return estimator.decision_function(X_test)
-    return estimator.predict(X_test)
+        return estimator.decision_function(X_test), False
+    return estimator.predict(X_test), False
 
 
-def _score_fold(estimator, X_test: np.ndarray, y_test: np.ndarray) -> tuple[float, float]:
+def _positive_class_binary(estimator, y_test: np.ndarray) -> np.ndarray:
+    """Encode y_test as 0/1 using the estimator positive class when available."""
+    classes = getattr(estimator, "classes_", None)
+    if classes is None and hasattr(estimator, "steps"):
+        classes = getattr(estimator.steps[-1][1], "classes_", None)
+    if classes is None:
+        classes = np.unique(y_test)
+    if len(classes) != 2:
+        raise ValueError("Expected exactly two estimator classes")
+    return (np.asarray(y_test) == classes[1]).astype(int)
+
+
+def expected_calibration_error(y_true_bin: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> float:
+    """Expected calibration error for binary probabilities using equal-width bins."""
+    y_true_bin = np.asarray(y_true_bin, dtype=float)
+    y_prob = np.asarray(y_prob, dtype=float)
+    ok = np.isfinite(y_true_bin) & np.isfinite(y_prob)
+    y_true_bin = y_true_bin[ok]
+    y_prob = y_prob[ok]
+    if y_true_bin.size == 0:
+        return np.nan
+    edges = np.linspace(0.0, 1.0, n_bins + 1)
+    ece = 0.0
+    for i in range(n_bins):
+        if i == n_bins - 1:
+            mask = (y_prob >= edges[i]) & (y_prob <= edges[i + 1])
+        else:
+            mask = (y_prob >= edges[i]) & (y_prob < edges[i + 1])
+        if np.any(mask):
+            ece += mask.mean() * abs(y_true_bin[mask].mean() - y_prob[mask].mean())
+    return float(ece)
+
+
+def _score_fold(estimator, X_test: np.ndarray, y_test: np.ndarray) -> tuple[float, float, float, float]:
     y_pred = estimator.predict(X_test)
-    y_score = _binary_scores(estimator, X_test)
+    y_score, is_probability = _binary_scores(estimator, X_test)
+    y_true_bin = _positive_class_binary(estimator, y_test)
     try:
         auc = roc_auc_score(y_test, y_score)
     except ValueError:
         auc = np.nan
-    return float(auc), float(balanced_accuracy_score(y_test, y_pred))
+    if is_probability:
+        brier = brier_score_loss(y_true_bin, y_score)
+        ece = expected_calibration_error(y_true_bin, y_score)
+    else:
+        brier = np.nan
+        ece = np.nan
+    return float(auc), float(balanced_accuracy_score(y_test, y_pred)), float(brier), float(ece)
 
 
 def evaluate_subject_with_dropout(
@@ -135,7 +175,7 @@ def evaluate_subject_with_dropout(
     cv = StratifiedKFold(n_splits=n_splits_eff, shuffle=True, random_state=random_seed)
     rows = []
     for fold, (train_idx, test_idx) in enumerate(cv.split(X, y), start=1):
-        clf = make_csp_lda(n_components=min(csp_components, X.shape[1]), random_state=random_seed)
+        clf = make_pipeline_by_name(pipeline_name, csp_components=min(csp_components, X.shape[1]), random_state=random_seed)
         clf.fit(X[train_idx], y[train_idx])
         y_test = y[test_idx]
         for fraction in dropout_fractions:
@@ -144,7 +184,7 @@ def evaluate_subject_with_dropout(
             for repeat in range(n_repeats):
                 rng = np.random.default_rng(random_seed + 1000 * fold + 100 * repeat + int(100 * fraction))
                 X_eval, dropped = apply_channel_dropout(X[test_idx], fraction, rng)
-                auc, bal_acc = _score_fold(clf, X_eval, y_test)
+                auc, bal_acc, brier, ece = _score_fold(clf, X_eval, y_test)
                 rows.append(
                     {
                         "subject": subject_id,
@@ -158,6 +198,8 @@ def evaluate_subject_with_dropout(
                         "n_dropped_channels": int(len(dropped)),
                         "balanced_accuracy": bal_acc,
                         "roc_auc": auc,
+                        "brier_score": brier,
+                        "ece": ece,
                     }
                 )
     return pd.DataFrame(rows)
@@ -210,6 +252,8 @@ def subject_level_summary(results: pd.DataFrame) -> pd.DataFrame:
         .agg(
             roc_auc=("roc_auc", "mean"),
             balanced_accuracy=("balanced_accuracy", "mean"),
+            brier_score=("brier_score", "mean"),
+            ece=("ece", "mean"),
             n_channels=("n_channels", "first"),
             n_dropped_channels=("n_dropped_channels", "mean"),
         )
@@ -248,6 +292,8 @@ def population_summary(results: pd.DataFrame, random_seed: int = 20260709) -> pd
             keys = (keys,)
         lo, hi = subject_bootstrap_ci(g["roc_auc"].to_numpy(), random_seed=random_seed)
         bal_lo, bal_hi = subject_bootstrap_ci(g["balanced_accuracy"].to_numpy(), random_seed=random_seed)
+        brier_lo, brier_hi = subject_bootstrap_ci(g["brier_score"].to_numpy(), random_seed=random_seed) if "brier_score" in g else (np.nan, np.nan)
+        ece_lo, ece_hi = subject_bootstrap_ci(g["ece"].to_numpy(), random_seed=random_seed) if "ece" in g else (np.nan, np.nan)
         row = dict(zip(group_cols, keys))
         row.update(
             {
@@ -258,6 +304,12 @@ def population_summary(results: pd.DataFrame, random_seed: int = 20260709) -> pd
                 "mean_balanced_accuracy": float(g["balanced_accuracy"].mean()),
                 "balanced_accuracy_ci_low": bal_lo,
                 "balanced_accuracy_ci_high": bal_hi,
+                "mean_brier_score": float(g["brier_score"].mean()) if "brier_score" in g else np.nan,
+                "brier_score_ci_low": brier_lo,
+                "brier_score_ci_high": brier_hi,
+                "mean_ece": float(g["ece"].mean()) if "ece" in g else np.nan,
+                "ece_ci_low": ece_lo,
+                "ece_ci_high": ece_hi,
                 "mean_n_channels": float(g["n_channels"].mean()),
             }
         )
@@ -365,7 +417,7 @@ def evaluate_subject_region_dropout(
         y_test = y[test_idx]
         for region_name in region_names:
             X_eval, dropped_names, dropped_idx = apply_named_region_dropout(X[test_idx], channel_names, region_name)
-            auc, bal_acc = _score_fold(clf, X_eval, y_test)
+            auc, bal_acc, brier, ece = _score_fold(clf, X_eval, y_test)
             rows.append({
                 "subject": subject_id,
                 "pipeline": pipeline_name,
@@ -380,5 +432,58 @@ def evaluate_subject_region_dropout(
                 "n_dropped_channels": int(len(dropped_idx)),
                 "balanced_accuracy": bal_acc,
                 "roc_auc": auc,
+                "brier_score": brier,
+                "ece": ece,
             })
+    return pd.DataFrame(rows)
+
+
+def evaluate_subject_cross_session(
+    X: np.ndarray,
+    y: np.ndarray,
+    metadata: pd.DataFrame,
+    subject_id: str | int,
+    random_seed: int = 20260709,
+    csp_components: int = 6,
+    pipeline_name: str = "csp_lda",
+) -> pd.DataFrame:
+    """Train on first available session and test on later sessions when metadata permit it."""
+    if metadata is None or len(metadata) != len(y):
+        return pd.DataFrame()
+    meta = pd.DataFrame(metadata).reset_index(drop=True)
+    session_col = next((c for c in ["session", "session_id", "sessions"] if c in meta.columns), None)
+    if session_col is None:
+        return pd.DataFrame()
+    sessions = [s for s in pd.unique(meta[session_col]) if pd.notna(s)]
+    if len(sessions) < 2:
+        return pd.DataFrame()
+    first_session = sessions[0]
+    train_idx = np.flatnonzero(meta[session_col].to_numpy() == first_session)
+    rows = []
+    for test_session in sessions[1:]:
+        test_idx = np.flatnonzero(meta[session_col].to_numpy() == test_session)
+        if len(train_idx) == 0 or len(test_idx) == 0:
+            continue
+        if len(np.unique(y[train_idx])) != 2 or len(np.unique(y[test_idx])) != 2:
+            continue
+        clf = make_pipeline_by_name(pipeline_name, csp_components=min(csp_components, X.shape[1]), random_state=random_seed)
+        clf.fit(X[train_idx], y[train_idx])
+        auc, bal_acc, brier, ece = _score_fold(clf, X[test_idx], y[test_idx])
+        rows.append({
+            "subject": subject_id,
+            "pipeline": pipeline_name,
+            "stressor": "cross_session",
+            "montage": "all_channels",
+            "fold": 0,
+            "dropout_fraction": 0.0,
+            "repeat": 0,
+            "session_train": str(first_session),
+            "session_test": str(test_session),
+            "n_channels": int(X.shape[1]),
+            "n_dropped_channels": 0,
+            "balanced_accuracy": bal_acc,
+            "roc_auc": auc,
+            "brier_score": brier,
+            "ece": ece,
+        })
     return pd.DataFrame(rows)
