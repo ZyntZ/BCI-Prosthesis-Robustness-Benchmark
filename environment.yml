@@ -1,4 +1,4 @@
-name: interference-resistant-eeg-benchmark
+name: bci-robustness-benchmark
 channels:
   - conda-forge
 dependencies:

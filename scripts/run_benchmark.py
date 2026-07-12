@@ -16,9 +16,17 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from moabb.datasets import BNCI2014_001, PhysionetMI
-from moabb.paradigms import LeftRightImagery
-from moabb.utils import set_download_dir
+try:
+    from moabb.datasets import BNCI2014_001, PhysionetMI
+    from moabb.paradigms import LeftRightImagery
+    from moabb.utils import set_download_dir
+except ModuleNotFoundError as exc:  # pragma: no cover - depends on optional runtime package
+    BNCI2014_001 = None
+    PhysionetMI = None
+    LeftRightImagery = None
+    _MOABB_IMPORT_ERROR = exc
+else:
+    _MOABB_IMPORT_ERROR = None
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -40,6 +48,15 @@ DATASET_REGISTRY = {
 }
 
 
+def require_moabb() -> None:
+    """Raise a clear error if MOABB is unavailable for data-loading commands."""
+    if _MOABB_IMPORT_ERROR is not None:
+        raise RuntimeError(
+            "MOABB is required for dataset listing and benchmark execution. "
+            "Install dependencies with `pip install -r requirements.txt` or the conda environment."
+        ) from _MOABB_IMPORT_ERROR
+
+
 def load_config(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -57,6 +74,7 @@ def normalize_config_paths(config: dict) -> dict:
 
 
 def instantiate_dataset(name: str, subjects: list[int] | None = None):
+    require_moabb()
     if name not in DATASET_REGISTRY:
         raise ValueError(f"Unknown dataset {name!r}. Known: {sorted(DATASET_REGISTRY)}")
     cls = DATASET_REGISTRY[name]
@@ -83,6 +101,7 @@ def pipeline_config(config: dict, pipeline_name: str) -> dict:
 
 def available_subjects(dataset_name: str, config: dict) -> list[int]:
     """List subjects available through the MOABB dataset wrapper without loading EEG arrays."""
+    require_moabb()
     set_download_dir(config["moabb_data_dir"])
     ds = instantiate_dataset(dataset_name, subjects=None)
     return list(ds.subject_list)
@@ -91,6 +110,12 @@ def available_subjects(dataset_name: str, config: dict) -> list[int]:
 def dry_run(config: dict) -> None:
     print("Dry run only: no EEG data will be downloaded.")
     print(json.dumps(config, indent=2, ensure_ascii=False))
+    print("\nConfigured dataset aliases:")
+    for key in DATASET_REGISTRY:
+        print(f"- {key}")
+    if _MOABB_IMPORT_ERROR is not None:
+        print("\nMOABB is not installed in this environment; dataset metadata checks are skipped.")
+        return
     print("\nAvailable starter datasets:")
     for key, cls in DATASET_REGISTRY.items():
         try:
@@ -98,7 +123,6 @@ def dry_run(config: dict) -> None:
             print(f"- {key}: code={ds.code}, subjects={len(ds.subject_list)}")
         except Exception as exc:
             print(f"- {key}: metadata unavailable ({exc})")
-
 
 def run_one_subject(
     dataset,

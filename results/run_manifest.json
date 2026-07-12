@@ -1,11 +1,10 @@
 {
-  "created_utc": "2026-07-11T20:20:42Z",
-  "data_policy": "No simulated data. Outputs derive from existing CSVs or MOABB/MNE real EEG runs.",
+  "data_policy": "Example outputs derive from MOABB/MNE-accessible EEG datasets listed below. Regenerate outputs before final manuscript submission.",
   "available_subjects_checked": {
     "PhysionetMI": "1-109 via MOABB",
     "BNCI2014-001": "1-9 via MOABB"
   },
-  "executed_real_data_runs": [
+  "executed_runs_included": [
     {
       "dataset": "BNCI2014-001",
       "subjects": "1-9",
@@ -34,14 +33,8 @@
         "channel_dropout",
         "reduced_montage"
       ],
-      "status": "pre-existing development CSVs reanalyzed"
+      "status": "development subset"
     }
   ],
-  "not_executed_in_handoff": [
-    "PhysioNetMI subjects 1-109 full run; runner prepared as make physionet-full"
-  ],
-  "primary_outputs": [
-    "results/csv_manifest.csv",
-    "results/csv_manifest.csv"
-  ]
+  "primary_index": "results/csv_manifest.csv"
 }

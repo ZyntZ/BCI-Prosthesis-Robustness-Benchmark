@@ -1,81 +1,116 @@
 # BCI Prosthesis Robustness Benchmark
 
-Selected project: a reproducible benchmark of motor-imagery BCI decoders under realistic deployment stressors: cross-session/domain shift, channel dropout, reduced montages, and per-subject reliability failure.
+A reproducible benchmark for motor-imagery EEG decoders under deployment stressors relevant to BCI-controlled prostheses: test-time channel dropout, reduced electrode montages, spatially clustered motor-channel dropout, and cross-session shift.
 
-This repository is a starting implementation for analyses on open EEG datasets fetched through MOABB/MNE.
+The project uses open EEG datasets available through MOABB and MNE. The benchmark reports subject-level outcomes, uncertainty estimates, paired stressor-vs-baseline comparisons, calibration metrics when probabilities are available, and subject-level intervention recommendations.
 
-## Why this project
+## Included components
 
-Most open BCI algorithm papers optimize average decoding accuracy on clean offline data. A deployable neuroprosthetic controller also needs to fail gracefully when electrodes detach, the cap montage differs, or a subject/session shifts. This project turns that problem into a reproducible benchmark with uncertainty estimates and transparent statistics.
+- Benchmark runner for MOABB datasets: `scripts/run_benchmark.py`.
+- CSP+LDA and optional Riemannian tangent-space logistic regression baselines.
+- Stress tests for random channel dropout, named motor-region dropout, reduced motor montages, and cross-session evaluation when session metadata permit it.
+- Post-processing scripts for robustness summaries, failure rates, paired statistics, mixed-effects models, and recommendation cards.
+- Example result tables and figures for PhysioNetMI development runs and BNCI2014-001 full-subject runs.
 
-## Data sources
+## Repository layout
 
-Default plan uses MOABB datasets and can begin with PhysioNet EEG Motor Movement/Imagery (`Schalk2004`) for feasibility, then expand to BNCI/BCI Competition datasets where licenses allow automatic download.
-
-## Implementation status
-
-- repository skeleton created
-- configuration file created
-- benchmark CLI scaffold created
-- analysis notes prepared
-- report figures generated in `reports/`
-
-## Quick start
-
-```bash
-python -m pip install mne moabb scikit-learn pandas numpy scipy statsmodels matplotlib seaborn pyyaml
-python scripts/run_benchmark.py --config configs/benchmark.yaml --dry-run
+```text
+configs/                 Benchmark configuration
+scripts/                 Command-line entry points
+src/bci_robustness/      Core evaluation and summary utilities
+results/                 Example benchmark outputs and derived statistics
+reports/                 Figures and HTML reports generated from results
+DATA_PROVENANCE.md       Dataset/result provenance notes
+REPRODUCIBILITY.md       Commands for reproducing analyses
+RELEASE_CHECKLIST.md     Items to complete before a public archive or manuscript release
 ```
 
-Remove `--dry-run` only when you are ready to download open EEG datasets.
+## Installation
 
-## Core outputs planned
+Conda:
 
-1. Subject-level performance table for each dataset/model/stressor.
-2. Robustness curves vs. channel loss severity.
-3. Mixed-effects model estimating performance loss attributable to stressors.
-4. Subject-level uncertainty and reliability flags.
-5. Reproducible tables and figures.
+```bash
+conda env create -f environment.yml
+conda activate bci-robustness-benchmark
+```
 
+Pip:
 
-## Development continuation: PhysioNetMI n=10 run
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
 
-Continuation added a writable project copy, subject-level checkpointing, reduced-montage evaluation, and a real-data run on PhysioNetMI subjects 1–10. Outputs are in `results/`:
+The benchmark downloads EEG data through MOABB/MNE when `--download-and-run` is used. Set `moabb_data_dir` in `configs/benchmark.yaml` if the data cache should live outside the repository.
 
-- `PhysionetMI_dev10_results.csv`: fold/repeat-level results
-- `PhysionetMI_dev10_subject_summary.csv`: subject-level summaries used for inference
-- `PhysionetMI_dev10_population_summary.csv`: population summaries with bootstrap confidence intervals
-- `PhysionetMI_dev10_paired_comparisons.csv`: paired subject-level comparisons against clean all-channel baseline
-- `PhysionetMI_dev10_reliability_flags_ci.csv`: failure-rate estimates with exact binomial confidence intervals
+## Quick checks
 
-Important limitation: n=10 is a development run, not a final population estimate. Full analysis should scale to all accessible subjects and then repeat on at least one additional dataset.
+```bash
+python scripts/run_benchmark.py --config configs/benchmark.yaml --dry-run
+python scripts/run_benchmark.py --config configs/benchmark.yaml --dataset PhysionetMI --list-subjects
+```
 
+## Running benchmarks
 
-## Next-stage update: intervention recommendation layer
+Development run on selected PhysioNetMI subjects:
 
-This repository now includes a stronger publishable layer beyond robustness curves:
+```bash
+python scripts/run_benchmark.py   --config configs/benchmark.yaml   --download-and-run   --dataset PhysionetMI   --subjects 1 2 3 4 5 6 7 8 9 10   --include-reduced-montage   --pipeline csp_lda   --suffix dev10
+```
 
-1. **Subject risk cards** from real PhysioNetMI n=10 development results.
-2. **Intervention recommendations**: whether a subject should use a reduced montage first, require recalibration/dropout-aware training, or be screened out for this paradigm.
-3. **Interactive dashboards**:
-   - `reports/PhysionetMI_dev10_interactive_dashboard.html`
-   - `reports/PhysionetMI_dev10_intervention_recommendations.html`
-4. **New benchmark hooks**:
-   - optional Riemannian tangent-space logistic regression baseline (`riemann_lr`, requires `pyriemann`);
-   - named motor-region dropout (`left_motor_strip`, `midline_motor_strip`, `right_motor_strip`) for spatially clustered channel-failure stress tests.
+Full BNCI2014-001 runs:
 
-Run after a benchmark completes:
+```bash
+make bnci-full
+```
+
+Full PhysioNetMI runs:
+
+```bash
+make physionet-full
+```
+
+These commands may take substantial time because MOABB downloads and processes raw EEG data.
+
+## Post-processing
 
 ```bash
 python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_dev10 --reports-dir reports
 python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_dev10
+python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_dev10
 ```
 
-Next benchmark run with new hooks:
+Convenience target:
 
 ```bash
-python scripts/run_benchmark.py   --config configs/benchmark.yaml   --download-and-run   --dataset PhysionetMI   --subjects 1 2 3 4 5 6 7 8 9 10   --include-reduced-montage   --include-region-dropout   --pipeline csp_lda   --suffix dev10_region
+make all-dev10
 ```
 
-Current results are from a development run only (n=10). Do not treat them as a final population-level estimate.
+## Main outputs
 
+For a run prefix such as `PhysionetMI_dev10`, the pipeline writes:
+
+- `{prefix}_results.csv`: fold/repeat-level benchmark rows.
+- `{prefix}_subject_summary.csv`: one row per subject/condition for inference.
+- `{prefix}_population_summary.csv`: condition-level means and bootstrap confidence intervals.
+- `{prefix}_paired_comparisons.csv` and `{prefix}_final_paired_sensitivity.csv`: paired comparisons against the clean all-channel baseline.
+- `{prefix}_subject_risk_cards.csv`: subject-level robustness flags.
+- `{prefix}_intervention_recommendations.csv`: subject-level deployment recommendations.
+- HTML reports in `reports/` when Plotly is available.
+
+## Statistical approach
+
+Inference is performed after collapsing fold/repeat outputs to subject-level summaries. Paired stressor-vs-baseline analyses use within-subject differences. The scripts report confidence intervals, Shapiro-Wilk diagnostics for paired differences, paired t-tests, Wilcoxon signed-rank tests, standardized paired effect sizes, and Benjamini-Hochberg false-discovery-rate adjusted p-values where multiple comparisons are evaluated. Mixed-effects models use subject random intercepts for condition-level comparisons.
+
+## Data and interpretation notes
+
+- Example outputs in `results/` are benchmark artifacts produced from MOABB/MNE-accessible datasets and should be regenerated for final analyses.
+- PhysioNetMI `dev10` outputs are a development subset and should not be interpreted as final population estimates.
+- BNCI2014-001 outputs cover subjects 1-9 for the included CSP+LDA and Riemannian baseline runs.
+- Metrics based on predicted probabilities, such as Brier score and expected calibration error, are available only when the fitted pipeline exposes usable probability estimates.
+- Raw EEG downloads are intentionally not included in this repository.
+
+## Release status
+
+Before public release, choose a license, add citation metadata if the repository will be archived, and confirm dataset citation requirements. See `RELEASE_CHECKLIST.md`.

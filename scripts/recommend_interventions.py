@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generate intervention recommendations from real subject-level BCI robustness outputs.
+"""Generate intervention recommendations from subject-level robustness outputs.
 
-Inputs are produced by scripts/analyze_robustness.py. This script does not
-simulate data. It turns measured clean, dropout, and reduced-montage ROC-AUC
-values into subject-level decision cards and cohort-level rescue statistics.
+Inputs are produced by scripts/analyze_robustness.py. Clean, dropout, and
+reduced-montage ROC-AUC values are converted into subject-level decision cards
+and cohort-level rescue statistics.
 """
 
 from __future__ import annotations

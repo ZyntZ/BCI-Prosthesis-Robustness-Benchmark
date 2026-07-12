@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Analyze subject-level BCI robustness results and build a dashboard.
 
-This script consumes real benchmark CSV outputs. It does not simulate data.
-It creates:
-- subject risk cards
-- intervention/montage-rescue metrics
-- paired dropout-vs-clean statistics
-- an interactive HTML dashboard
+The script expects benchmark CSV outputs produced by the runner and creates
+subject risk cards, montage-rescue metrics, paired statistics, and an
+interactive HTML dashboard.
 """
 
 from __future__ import annotations
@@ -31,7 +28,7 @@ def exact_binom_ci(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
     return float(lo), float(hi)
 
 
-def bootstrap_ci(x: np.ndarray, n_resamples: int = 5000, seed: int = 20260709) -> tuple[float, float]:
+def bootstrap_ci(x: np.ndarray, n_resamples: int = 5000, seed: int = 42) -> tuple[float, float]:
     x = np.asarray(x, dtype=float)
     x = x[np.isfinite(x)]
     if x.size < 2:

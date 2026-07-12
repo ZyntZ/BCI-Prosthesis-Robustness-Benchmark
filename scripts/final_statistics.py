@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Final subject-level statistics for real EEG benchmark CSVs.
+"""Final subject-level statistics for benchmark CSV outputs.
 
-This script consumes saved benchmark outputs only. It does not simulate data and
-never treats fold/repeat rows as independent inferential units.
+Fold/repeat outputs are first collapsed to subject-level summaries before
+population-level inference.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def exact_binom_ci(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
     return float(lo), float(hi)
 
 
-def bootstrap_ci(x: np.ndarray, n_resamples: int = 5000, seed: int = 20260709) -> tuple[float, float]:
+def bootstrap_ci(x: np.ndarray, n_resamples: int = 5000, seed: int = 42) -> tuple[float, float]:
     x = np.asarray(x, dtype=float)
     x = x[np.isfinite(x)]
     if x.size < 2:
@@ -59,7 +59,7 @@ def load_subject_level(results_dir: Path, prefix: str) -> pd.DataFrame:
     return df
 
 
-def population_metrics(subj: pd.DataFrame, seed: int = 20260709) -> pd.DataFrame:
+def population_metrics(subj: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     group_cols = ["dataset", "pipeline", "stressor", "montage", "dropout_fraction"]
     rows = []
     for keys, g in subj.groupby(group_cols, dropna=False):
@@ -88,7 +88,7 @@ def wide_auc(subj: pd.DataFrame) -> pd.DataFrame:
     return wide
 
 
-def paired_sensitivity(wide: pd.DataFrame, seed: int = 20260709) -> pd.DataFrame:
+def paired_sensitivity(wide: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     rows = []
     cond_cols = [c for c in wide.columns if c.startswith("auc_dropout_") or c.startswith("auc_motor_")]
     for col in sorted(cond_cols):

@@ -1,7 +1,7 @@
 project_name: bci_prosthesis_robustness_benchmark
 moabb_data_dir: moabb_data
 results_dir: results
-random_seed: 20260709
+random_seed: 42
 datasets:
 - name: PhysionetMI
   paradigm: LeftRightImagery

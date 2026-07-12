@@ -11,18 +11,18 @@ build/
 dist/
 *.egg-info/
 .eggs/
+*.egg
+*.whl
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage
+# Test / coverage
 .pytest_cache/
 .coverage
 .coverage.*
+coverage.xml
 htmlcov/
 .tox/
 .nox/
+*.prof
 
 # Virtual environments
 .venv/
@@ -32,38 +32,28 @@ env/
 env.bak/
 venv.bak/
 
-# Jupyter
-.ipynb_checkpoints
-
-# Editor directories and files
+# Jupyter and editors
+.ipynb_checkpoints/
 .vscode/
 .idea/
 *.iml
 
-# macOS
+# OS files
 .DS_Store
 
-# Environment files
+# Local configuration and secrets
 .env
 .env.local
 
-# Logs and databases
+# Logs and local databases
 *.log
 *.sqlite3
 
-# Temp files
+# Temporary files
 tmp/
 temp/
 *.tmp
 
-# Project outputs to ignore
-results/
-reports/
-
-# Coverage and profiling
-coverage.xml
-*.prof
-
-# Other
-*.egg
-*.whl
+# Raw EEG cache; raw datasets should not be committed
+moabb_data/
+MNE-*/

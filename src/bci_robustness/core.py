@@ -1,7 +1,7 @@
 """Core utilities for the BCI robustness benchmark.
 
-No data are bundled here. Functions expect EEG arrays loaded from public datasets
-through MOABB/MNE or other documented sources.
+Functions operate on EEG arrays supplied by MOABB/MNE loaders or another
+documented data source.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ class DropoutSpec:
     random_seed: int
 
 
-def make_csp_lda(n_components: int = 6, random_state: int = 20260709) -> Pipeline:
+def make_csp_lda(n_components: int = 6, random_state: int = 42) -> Pipeline:
     """Create a classical motor-imagery BCI baseline: CSP + LDA."""
     if CSP is None:  # pragma: no cover
         raise ImportError(f"mne.decoding.CSP could not be imported: {_CSP_IMPORT_ERROR}")
@@ -147,7 +147,7 @@ def evaluate_subject_with_dropout(
     dropout_fractions: Iterable[float] = (0.0, 0.1, 0.2, 0.3, 0.5),
     repeats_per_fraction: int = 20,
     n_splits: int = 5,
-    random_seed: int = 20260709,
+    random_seed: int = 42,
     csp_components: int = 6,
     pipeline_name: str = "csp_lda",
     montage_name: str = "all_channels",
@@ -212,7 +212,7 @@ def evaluate_subject_reduced_montages(
     subject_id: str | int,
     montages: dict[str, Sequence[str]],
     n_splits: int = 5,
-    random_seed: int = 20260709,
+    random_seed: int = 42,
     csp_components: int = 6,
     pipeline_name: str = "csp_lda",
 ) -> pd.DataFrame:
@@ -263,7 +263,7 @@ def subject_level_summary(results: pd.DataFrame) -> pd.DataFrame:
 def subject_bootstrap_ci(
     values: np.ndarray,
     confidence_level: float = 0.95,
-    random_seed: int = 20260709,
+    random_seed: int = 42,
     n_resamples: int = 2000,
 ) -> tuple[float, float]:
     """Bootstrap confidence interval for a mean over subjects."""
@@ -282,7 +282,7 @@ def subject_bootstrap_ci(
     return float(res.confidence_interval.low), float(res.confidence_interval.high)
 
 
-def population_summary(results: pd.DataFrame, random_seed: int = 20260709) -> pd.DataFrame:
+def population_summary(results: pd.DataFrame, random_seed: int = 42) -> pd.DataFrame:
     """Population summary after collapsing to one row per subject/condition."""
     subj = subject_level_summary(results)
     group_cols = ["dataset", "pipeline", "stressor", "montage", "dropout_fraction"]
@@ -317,9 +317,9 @@ def population_summary(results: pd.DataFrame, random_seed: int = 20260709) -> pd
     return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
-# ---- Next-stage robustness utilities: optional Riemannian baseline and spatial dropout ----
+# ---- Optional Riemannian baseline and spatial dropout utilities ----
 
-def make_riemannian_logreg(random_state: int = 20260709):
+def make_riemannian_logreg(random_state: int = 42):
     """Create an optional Riemannian covariance baseline.
 
     Requires pyriemann. This is intentionally optional so the CSP+LDA pipeline
@@ -343,7 +343,7 @@ def make_riemannian_logreg(random_state: int = 20260709):
     )
 
 
-def make_pipeline_by_name(name: str, csp_components: int = 6, random_state: int = 20260709):
+def make_pipeline_by_name(name: str, csp_components: int = 6, random_state: int = 42):
     """Factory for benchmark pipelines."""
     name = str(name).lower()
     if name in {"csp_lda", "csp+lda"}:
@@ -391,15 +391,14 @@ def evaluate_subject_region_dropout(
     subject_id: str | int,
     region_names: Sequence[str] = ("left_motor_strip", "midline_motor_strip", "right_motor_strip"),
     n_splits: int = 5,
-    random_seed: int = 20260709,
+    random_seed: int = 42,
     csp_components: int = 6,
     pipeline_name: str = "csp_lda",
 ) -> pd.DataFrame:
     """Evaluate test-time region dropout for one subject.
 
     Training remains clean. Test folds are corrupted by zeroing a named channel
-    region. This function is ready for the next full benchmark run; it does not
-    invent data and only operates on supplied EEG arrays.
+    region. This function operates on supplied EEG arrays and leaves training folds unmodified.
     """
     X = np.asarray(X)
     y = np.asarray(y)
@@ -443,7 +442,7 @@ def evaluate_subject_cross_session(
     y: np.ndarray,
     metadata: pd.DataFrame,
     subject_id: str | int,
-    random_seed: int = 20260709,
+    random_seed: int = 42,
     csp_components: int = 6,
     pipeline_name: str = "csp_lda",
 ) -> pd.DataFrame:
