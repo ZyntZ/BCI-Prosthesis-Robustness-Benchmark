@@ -326,13 +326,61 @@ def report_table(paired: pd.DataFrame) -> pd.DataFrame:
     return paired.loc[paired["metric"].isin(["roc_auc", "balanced_accuracy"]), [c for c in cols if c in paired.columns]].sort_values(["metric", "condition"]).reset_index(drop=True)
 
 
-def write_latex_table(table: pd.DataFrame, path: Path) -> None:
+
+def escape_latex_cell(value: object) -> str:
+    """Escape a scalar for a minimal LaTeX tabular without pandas Styler/Jinja2."""
+    if pd.isna(value):
+        return ""
+    text = str(value)
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(ch, ch) for ch in text)
+
+
+def format_table_for_text(table: pd.DataFrame) -> pd.DataFrame:
     out = table.copy()
     for c in out.select_dtypes(include=[np.number]).columns:
         if c == "n_subjects":
             continue
         out[c] = out[c].map(lambda x: "" if pd.isna(x) else f"{x:.4g}")
-    path.write_text(out.to_latex(index=False, escape=True), encoding="utf-8")
+    return out
+
+
+def dataframe_to_latex_tabular(table: pd.DataFrame) -> str:
+    """Render a small tabular using only the Python standard library."""
+    out = format_table_for_text(table)
+    align = "l" * len(out.columns)
+    lines = [r"\begin{tabular}{" + align + "}", r"\toprule"]
+    lines.append(" & ".join(escape_latex_cell(c) for c in out.columns) + r" \\")
+    lines.append(r"\midrule")
+    for _, row in out.iterrows():
+        lines.append(" & ".join(escape_latex_cell(row[c]) for c in out.columns) + r" \\")
+    lines.extend([r"\bottomrule", r"\end{tabular}", ""])
+    return "\n".join(lines)
+
+
+def dataframe_to_markdown(table: pd.DataFrame) -> str:
+    """Render a GitHub-flavored markdown table without optional tabulate dependency."""
+    out = format_table_for_text(table).fillna("")
+    cols = [str(c) for c in out.columns]
+    rows = ["| " + " | ".join(cols) + " |", "| " + " | ".join(["---"] * len(cols)) + " |"]
+    for _, row in out.iterrows():
+        rows.append("| " + " | ".join(str(row[c]) for c in out.columns) + " |")
+    return "\n".join(rows)
+
+
+def write_latex_table(table: pd.DataFrame, path: Path) -> None:
+    path.write_text(dataframe_to_latex_tabular(table), encoding="utf-8")
 
 
 def write_markdown_summary(audit: pd.DataFrame, paired: pd.DataFrame, slopes_pop: pd.DataFrame, sensitivity: pd.DataFrame, flags: pd.DataFrame, path: Path, prefix: str) -> None:
@@ -340,11 +388,11 @@ def write_markdown_summary(audit: pd.DataFrame, paired: pd.DataFrame, slopes_pop
     txt = [
         f"# Statistical reporting pack for `{prefix}`", "",
         "Generated from existing subject-summary CSV files only; no simulated or additional benchmark observations are used.", "",
-        "## Methods audit", audit.to_markdown(index=False), "",
-        "## Paired stressor effects vs clean all-channel baseline", key.to_markdown(index=False), "",
-        "## Sensitivity summary", sensitivity.to_markdown(index=False) if not sensitivity.empty else "No sensitivity table was produced.", "",
-        "## Channel-dropout slopes", slopes_pop.to_markdown(index=False) if not slopes_pop.empty else "No channel-dropout slope table was produced.", "",
-        "## Overclaim-risk flags", flags.to_markdown(index=False) if not flags.empty else "No overclaim flags were produced.", "",
+        "## Methods audit", dataframe_to_markdown(audit), "",
+        "## Paired stressor effects vs clean all-channel baseline", dataframe_to_markdown(key), "",
+        "## Sensitivity summary", dataframe_to_markdown(sensitivity) if not sensitivity.empty else "No sensitivity table was produced.", "",
+        "## Channel-dropout slopes", dataframe_to_markdown(slopes_pop) if not slopes_pop.empty else "No channel-dropout slope table was produced.", "",
+        "## Overclaim-risk flags", dataframe_to_markdown(flags) if not flags.empty else "No overclaim flags were produced.", "",
         "## Statistical notes",
         "- Paired effects are computed within subject against the clean all-channel baseline.",
         "- Confidence intervals for mean paired deltas and slopes use Student t intervals.",

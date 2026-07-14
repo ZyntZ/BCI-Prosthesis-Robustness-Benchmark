@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-14T18:18:07.848476+00:00",
+  "generated_at_utc": "2026-07-14T18:39:23.096295+00:00",
   "python": "3.13.7",
   "platform": "Linux-4.4.0-x86_64-with-glibc2.36",
   "package_versions": {
@@ -317,8 +317,8 @@
     },
     {
       "path": "STATISTICAL_REPORTING.md",
-      "sha256": "6adf45bb3966ce4697f700d081e482fc31963d8184866c3d333d1f17349c08ee",
-      "bytes": 4453
+      "sha256": "1eee7b23bbd09851918dd918a082d7f1cc2b89c50685db4b3156bdfbc90cc717",
+      "bytes": 4649
     },
     {
       "path": "configs/benchmark.yaml",
@@ -337,12 +337,12 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_report_summary.md",
-      "sha256": "c8ae2a2840bbe32c0a23468ccfb66eded8bfa0e9d3b5d3a4d749cbb97ffc14bb",
-      "bytes": 17062
+      "sha256": "70ba933fc3d41f0184cee81fc0550606282febb637282e7386dae640d1f78326",
+      "bytes": 9223
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_report_table.tex",
-      "sha256": "9c4727f6048b138c6df1d964e64de50508ccbad99646054f7970893cb038f411",
+      "sha256": "ce076807a182fde415986f00ac5d2f41eb2a18f3e49f4b592a322392034c8795",
       "bytes": 2849
     },
     {
@@ -367,7 +367,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.svg",
-      "sha256": "45e4216964f2aa990d3cf9ce12ffe8fb01a5cd9667a40aaede3841ba98f71cba",
+      "sha256": "87b7bfc8b9d2d0a8b0f7f776d96679bd4e22f2f309d31d4d565b57da85bd24e5",
       "bytes": 32810
     },
     {
@@ -377,7 +377,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.svg",
-      "sha256": "116c84252895062154623dcdc26d76872d6e3ca79511e453939a2b06db0182e6",
+      "sha256": "caccfc283c08595bed73fe2758642e78eb0486556b54a9b17399f577f4027540",
       "bytes": 55439
     },
     {
@@ -387,17 +387,17 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.svg",
-      "sha256": "0ebd0a737fb3ef01e455a1b4a7b682163097ab8c4ee00a037f59bbb6b5d04ab4",
+      "sha256": "e4999430d578fe91a5ebbe083cd109e9dfdcb041d03ae0e2917864d552b571ba",
       "bytes": 41906
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_report_summary.md",
-      "sha256": "97178d7c9820cd2116d00269ea6678690ac5c34c320e3b59f45d65ed4b79574b",
-      "bytes": 17065
+      "sha256": "8edc6de0f6bc7b9801636b2b04a8a3246d3d63730f36f1d53e1ec5cf7e82094b",
+      "bytes": 9242
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_report_table.tex",
-      "sha256": "d5bf36bfe87c5a5e19bd73d41ba0305872d056c994641e3aab431846865040cc",
+      "sha256": "f4f95574775a06bd1572d0dd9190785d6d9d020fd984a142a97b0bae9431dace",
       "bytes": 2857
     },
     {
@@ -412,12 +412,12 @@
     },
     {
       "path": "reports/PhysionetMI_dev10_statistical_report_summary.md",
-      "sha256": "d0843b4de8313a534ce1067e27f066b8026e34250bfb79eb84f54773b76f71a6",
-      "bytes": 14792
+      "sha256": "559412056fc8aa1067277a8f56ae2dd21e37d3e9658e65a032d1f8938bcac7c6",
+      "bytes": 7580
     },
     {
       "path": "reports/PhysionetMI_dev10_statistical_report_table.tex",
-      "sha256": "18ee43201bfa3093aaf6ba218fb1f3c678167db50f44b108fb494e156397014d",
+      "sha256": "df14ba9e64bdf9d80f4b02f12a084f38252838380c2e3ebc399f374fa794ed4a",
       "bytes": 2419
     },
     {
@@ -432,8 +432,8 @@
     },
     {
       "path": "reports/release_manifest.json",
-      "sha256": "7b212c5498173d1632cb5714df48e5956d4f2ab0e285cf35d1bae441c5c4bbad",
-      "bytes": 34755
+      "sha256": "7d76229aec345c3381cfaf355631ac86119c69bf0d84488c5fde0eeb52e78925",
+      "bytes": 34752
     },
     {
       "path": "requirements.txt",
@@ -867,8 +867,8 @@
     },
     {
       "path": "scripts/generate_statistical_report.py",
-      "sha256": "0c00b5179f887569bf818ff3b64a5b92553a2e61d6405b6fe01369cb3881c853",
-      "bytes": 21961
+      "sha256": "9c78b3b36a269e365c8cfd4dfff27d5f88adc0123f15f3d4ea753566225c9121",
+      "bytes": 23613
     },
     {
       "path": "scripts/recommend_interventions.py",
@@ -917,8 +917,8 @@
     },
     {
       "path": "tests/test_generate_statistical_report.py",
-      "sha256": "ae7deb09002b3152cf2410a927909cf116b406e2ed5d25ae309e5dfe74958cda",
-      "bytes": 2591
+      "sha256": "18db0fe9fc5269eadde8de739e8ea7b2243a9831e0cb8bfd00befe2ef5586331",
+      "bytes": 3278
     },
     {
       "path": "tests/test_publication_gate.py",

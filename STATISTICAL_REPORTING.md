@@ -66,3 +66,8 @@ Generated report files are reproducible from the CSV summaries and can be regene
 ## Figure outputs
 
 `scripts/generate_methods_figures.py` creates three methods-paper figures from existing CSV results: a pipeline schematic, a paired channel-dropout degradation plot, and intervention/risk-class counts. The bar chart is descriptive only and must not be interpreted causally.
+
+
+## Dependency note
+
+The LaTeX and Markdown table writers avoid optional pandas Styler dependencies such as Jinja2 and tabulate so CI can regenerate reports with the base reporting dependencies.

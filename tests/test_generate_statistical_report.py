@@ -48,3 +48,20 @@ def test_extended_statistical_tables_include_effects_sensitivity_and_flags():
     assert not flags.empty
     assert "development_subset_prefix" in set(flags["flag"])
     assert flags.loc[flags["flag"].eq("development_subset_prefix"), "triggered"].iloc[0]
+
+
+def test_statistical_report_renderers_do_not_require_optional_pandas_styler_dependencies(tmp_path):
+    table = generate_statistical_report.report_table(
+        generate_statistical_report.paired_condition_effects(
+            generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_dev10")
+        )
+    ).head(2)
+    out = tmp_path / "table.tex"
+    generate_statistical_report.write_latex_table(table, out)
+    text = out.read_text()
+    assert "\\begin{tabular}" in text
+    assert "roc\\_auc" in text or "balanced\\_accuracy" in text
+
+    md = generate_statistical_report.dataframe_to_markdown(table)
+    assert md.startswith("| ")
+    assert "---" in md
