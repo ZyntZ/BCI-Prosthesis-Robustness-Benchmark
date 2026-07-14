@@ -195,3 +195,8 @@ Inference is performed after collapsing fold/repeat outputs to subject-level sum
 ## Technical status
 
 This repository snapshot is for technical development of the benchmark code, result-processing scripts, and example outputs. Non-technical metadata and writing-stage materials are intentionally not included in this archive.
+
+
+## Release archive audit
+
+Run `make release-archive` to audit required metadata, validation outputs, statistical reports, methods figures, and filename hygiene before writing `dist/JNM_release_polish_update.zip`. The audit excludes caches, bytecode, raw-data-like directories, and local temporary files.

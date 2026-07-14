@@ -19,5 +19,6 @@
       "svg": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.svg"
     }
   },
+  "style_note": "Restrained journal-style figures: white background, minimal color, direct data panels.",
   "note": "Figures are generated from existing repository CSV outputs only; no synthetic benchmark observations are used."
 }

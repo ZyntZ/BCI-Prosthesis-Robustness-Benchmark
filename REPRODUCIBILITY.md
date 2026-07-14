@@ -79,3 +79,8 @@ Post-processing scripts rebuild `{prefix}_subject_wide.csv` from the current `{p
 ## CI note for release manifest generation
 
 The `release-manifest` target intentionally depends on `validate-results`, `statistical-reports`, and `methods-figures`. This lets CI call `make release-manifest` directly after checkout while still generating all outputs required by `reports/release_manifest.json`.
+
+
+## Release archive target
+
+`make publication-check` now includes an archive audit. `make release-archive` writes a clean ZIP after the same audit passes.

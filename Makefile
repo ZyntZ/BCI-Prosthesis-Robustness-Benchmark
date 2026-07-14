@@ -9,7 +9,7 @@ MAX_CONSECUTIVE_FAILURES ?= 5
 SKIP_FAILED_FLAG = $(if $(filter 1 true yes,$(SKIP_FAILED)),--skip-failed,)
 
 
-.PHONY: publication-check release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
+.PHONY: publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
 
 install-dev:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -78,4 +78,10 @@ methods-figures:
 release-manifest: validate-results statistical-reports methods-figures
 	$(PYTHON) scripts/build_release_manifest.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --output $(REPORTS_DIR)/release_manifest.json
 
-publication-check: compile-check test release-manifest
+archive-audit: release-manifest
+	$(PYTHON) scripts/build_release_archive.py --audit-only
+
+release-archive: archive-audit
+	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_release_polish_update.zip
+
+publication-check: compile-check test release-manifest archive-audit
