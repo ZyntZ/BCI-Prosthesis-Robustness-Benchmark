@@ -101,6 +101,13 @@ These commands may take substantial time because MOABB downloads and processes r
 
 ## Statistical reporting
 
+Before using result tables for manuscript statistics, run the deterministic CSV validation checks. These checks verify required schemas, metric ranges, duplicate evaluation keys, channel-count/dropout consistency, clean-baseline pairing, and agreement between fold-level results and subject-level summaries:
+
+```bash
+python scripts/validate_results.py --results-dir results --reports-dir reports --prefix PhysionetMI_dev10 --allow-warnings
+make validate-results
+```
+
 For completed runs, generate methods-audit tables, paired subject-level effects, channel-dropout slopes, and compact CSV/LaTeX result tables:
 
 ```bash

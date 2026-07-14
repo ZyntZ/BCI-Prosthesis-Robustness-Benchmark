@@ -2,6 +2,20 @@
 
 This repository includes a reporting script that converts completed benchmark summaries into tables suitable for methods and results sections. The script reads existing `{prefix}_subject_summary.csv` files and writes derived quality-control and inferential summaries. It does not download data or add benchmark observations.
 
+## Pre-report validation
+
+Run validation before statistical reporting so schema and aggregation problems are caught before manuscript tables are produced:
+
+```bash
+python scripts/validate_results.py \
+  --results-dir results \
+  --reports-dir reports \
+  --prefix PhysionetMI_dev10 \
+  --allow-warnings
+```
+
+The validator writes `reports/{prefix}_validation_checks.csv` and `reports/{prefix}_validation_summary.json`. It fails on missing required columns, impossible metric values, duplicate evaluation keys, invalid channel counts, missing clean baselines for paired stressor rows, or mismatches between `{prefix}_results.csv` fold means and `{prefix}_subject_summary.csv`. Warnings cover optional metric absence and dropout-fraction inconsistencies that may need manual review.
+
 ## Command
 
 ```bash

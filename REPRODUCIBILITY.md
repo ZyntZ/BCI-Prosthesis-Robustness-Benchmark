@@ -45,9 +45,10 @@ Full runs download and preprocess EEG data through MOABB/MNE and can take substa
 python -m pip install -e .
 python -m compileall -q scripts src
 python -m pytest
+make validate-results
 ```
 
-These checks validate package importability, syntax, and lightweight unit tests.
+These checks validate package importability, syntax, lightweight unit tests, and publication-facing result-table integrity for the included reference outputs.
 
 
 ## Transient download failures and resume
