@@ -38,6 +38,18 @@ For a prefix such as `PhysionetMI_PhysionetMI_all_riemann_lr`, the script writes
 - `reports/{prefix}_statistical_report_summary.md`: Markdown summary of audit, paired effects, and channel-dropout slopes.
 - `results/{prefix}_statistical_report_manifest.json`: source and output manifest.
 
+
+
+## Extended interpretation outputs
+
+The reporting script now writes additional publication-facing tables derived from the same subject-summary CSV:
+
+- `results/{prefix}_statistical_effect_size_interpretation.csv`: mean and median paired deltas, median confidence intervals, Cohen's dz magnitude labels, sign-test results, and per-condition worsening/improvement counts.
+- `results/{prefix}_statistical_sensitivity_summary.csv`: primary ROC AUC, secondary balanced accuracy, and optional calibration-metric availability by condition.
+- `results/{prefix}_statistical_overclaim_flags.csv`: flags for low subject count, development-subset prefixes, missing calibration metrics, absent cross-session stressors, failed-subject logs, and uneven paired sample sizes.
+
+These files do not add observations. They summarize existing subject-level result rows and are intended to make limitations visible before manuscript drafting.
+
 ## Statistical conventions
 
 - Stressor comparisons are paired within subject against the clean all-channel baseline.

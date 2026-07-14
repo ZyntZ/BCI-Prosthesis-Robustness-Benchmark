@@ -32,3 +32,19 @@ def test_condition_labels_are_stable_for_existing_rows():
     labelled = generate_statistical_report.add_condition(subj)
     assert "clean_all_channels" in set(labelled["condition"])
     assert labelled.loc[labelled["stressor"].eq("reduced_montage"), "condition"].str.startswith("reduced_montage_").all()
+
+
+def test_extended_statistical_tables_include_effects_sensitivity_and_flags():
+    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_dev10")
+    paired = generate_statistical_report.paired_condition_effects(subj)
+    effects = generate_statistical_report.effect_size_interpretation(paired)
+    sensitivity = generate_statistical_report.sensitivity_summary(paired)
+    flags = generate_statistical_report.overclaim_flags(subj, paired, "PhysionetMI_dev10")
+
+    assert not effects.empty
+    assert {"median_delta_condition_minus_clean", "cohens_dz_magnitude", "evidence_flag"}.issubset(effects.columns)
+    assert not sensitivity.empty
+    assert {"primary", "secondary"}.issubset(set(sensitivity.loc[sensitivity["available"], "role"]))
+    assert not flags.empty
+    assert "development_subset_prefix" in set(flags["flag"])
+    assert flags.loc[flags["flag"].eq("development_subset_prefix"), "triggered"].iloc[0]

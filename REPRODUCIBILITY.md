@@ -51,6 +51,18 @@ make validate-results
 These checks validate package importability, syntax, lightweight unit tests, and publication-facing result-table integrity for the included reference outputs.
 
 
+
+
+## Commit-ready publication check
+
+Run the full local gate before tagging or archiving a release:
+
+```bash
+make publication-check
+```
+
+This target runs syntax checks, unit tests, validation of included reference results, statistical report regeneration for the included prefixes, and release manifest generation. The manifest is written to `reports/release_manifest.json` and records SHA-256 hashes for source, configuration, documentation, reference CSV/JSON outputs, and report files.
+
 ## Transient download failures and resume
 
 Subject-level checkpoints live in `results/checkpoints/`. If a network timeout occurs, rerun the same command; completed checkpoints are reused. Increase retry settings for unstable connections:

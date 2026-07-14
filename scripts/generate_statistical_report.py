@@ -18,6 +18,9 @@ from scipy import stats
 from statsmodels.stats.multitest import multipletests
 
 METRICS = ["roc_auc", "balanced_accuracy", "brier_score", "ece"]
+PRIMARY_METRIC = "roc_auc"
+SECONDARY_METRICS = ["balanced_accuracy"]
+CALIBRATION_METRICS = ["brier_score", "ece"]
 BENEFIT_METRICS = {"roc_auc", "balanced_accuracy"}
 COST_METRICS = {"brier_score", "ece"}
 KEY_COLS = ["dataset", "subject", "pipeline", "stressor", "montage", "dropout_fraction"]
@@ -70,6 +73,33 @@ def t_ci_mean(x: pd.Series | np.ndarray, alpha: float = 0.05) -> tuple[float, fl
     return float(lo), float(hi)
 
 
+def _sign_test_p_value(diff: pd.Series | np.ndarray) -> float:
+    arr = np.asarray(diff, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    arr = arr[arr != 0]
+    if arr.size == 0:
+        return np.nan
+    positives = int((arr > 0).sum())
+    result = stats.binomtest(positives, arr.size, 0.5, alternative="two-sided")
+    return float(result.pvalue)
+
+
+def _median_ci_sign_free(x: pd.Series | np.ndarray, alpha: float = 0.05) -> tuple[float, float]:
+    """Distribution-free sign-test CI for median using order statistics."""
+    arr = np.sort(np.asarray(x, dtype=float))
+    arr = arr[np.isfinite(arr)]
+    n = arr.size
+    if n < 2:
+        return np.nan, np.nan
+    # smallest k such that central order-statistic interval has coverage >= 1-alpha
+    k = 0
+    while k <= n // 2 and 2 * stats.binom.cdf(k - 1, n, 0.5) < alpha:
+        k += 1
+    lo_idx = max(0, k - 1)
+    hi_idx = min(n - 1, n - k)
+    return float(arr[lo_idx]), float(arr[hi_idx])
+
+
 def paired_condition_effects(subj: pd.DataFrame) -> pd.DataFrame:
     subj = add_condition(subj)
     clean = subj[subj["condition"] == "clean_all_channels"].set_index("subject")
@@ -86,6 +116,7 @@ def paired_condition_effects(subj: pd.DataFrame) -> pd.DataFrame:
                 continue
             diff = d["condition"] - d["clean"]
             lo, hi = t_ci_mean(diff)
+            med_lo, med_hi = _median_ci_sign_free(diff)
             ttest = stats.ttest_1samp(diff, 0.0)
             try:
                 wil = stats.wilcoxon(diff, zero_method="wilcox", alternative="two-sided")
@@ -98,8 +129,10 @@ def paired_condition_effects(subj: pd.DataFrame) -> pd.DataFrame:
             sd = float(diff.std(ddof=1))
             if metric in BENEFIT_METRICS:
                 worse = int((diff < 0).sum())
+                improved = int((diff > 0).sum())
             else:
                 worse = int((diff > 0).sum())
+                improved = int((diff < 0).sum())
             rows.append(
                 {
                     "condition": condition,
@@ -107,29 +140,115 @@ def paired_condition_effects(subj: pd.DataFrame) -> pd.DataFrame:
                     "montage": meta["montage"],
                     "dropout_fraction": float(meta["dropout_fraction"]),
                     "metric": metric,
+                    "metric_role": "primary" if metric == PRIMARY_METRIC else ("secondary" if metric in SECONDARY_METRICS else "calibration"),
                     "n_subjects": int(len(d)),
                     "clean_mean": float(d["clean"].mean()),
                     "condition_mean": float(d["condition"].mean()),
                     "mean_delta_condition_minus_clean": float(diff.mean()),
                     "delta_ci_low": lo,
                     "delta_ci_high": hi,
+                    "median_delta_condition_minus_clean": float(diff.median()),
+                    "median_delta_ci_low": med_lo,
+                    "median_delta_ci_high": med_hi,
                     "delta_sd": sd,
                     "cohens_dz": float(diff.mean() / sd) if sd > 0 else np.nan,
                     "t_statistic": float(ttest.statistic),
                     "t_p_value": float(ttest.pvalue),
                     "wilcoxon_statistic": wilcoxon_stat,
                     "wilcoxon_p_value": wilcoxon_p,
+                    "sign_test_p_value": _sign_test_p_value(diff),
                     "shapiro_p_value_delta": shapiro_p,
                     "n_worse_than_clean": worse,
                     "pct_worse_than_clean": float(worse / len(d)),
+                    "n_better_than_clean": improved,
+                    "pct_better_than_clean": float(improved / len(d)),
                 }
             )
     out = pd.DataFrame(rows)
-    for col in ["t_p_value", "wilcoxon_p_value"]:
+    for col in ["t_p_value", "wilcoxon_p_value", "sign_test_p_value"]:
         if col in out and out[col].notna().any():
             mask = out[col].notna()
             out.loc[mask, f"{col}_bh_fdr"] = multipletests(out.loc[mask, col], method="fdr_bh")[1]
     return out
+
+
+def effect_size_interpretation(paired: pd.DataFrame) -> pd.DataFrame:
+    if paired.empty:
+        return pd.DataFrame()
+    out = paired.copy()
+    def label_dz(x: float) -> str:
+        if pd.isna(x):
+            return "not_estimable"
+        ax = abs(float(x))
+        if ax < 0.2:
+            return "negligible"
+        if ax < 0.5:
+            return "small"
+        if ax < 0.8:
+            return "medium"
+        return "large"
+    out["cohens_dz_magnitude"] = out["cohens_dz"].map(label_dz)
+    out["direction"] = np.where(out["mean_delta_condition_minus_clean"] < 0, "condition_lower", "condition_higher")
+    out["evidence_flag"] = np.select(
+        [
+            out["n_subjects"] < 5,
+            out["shapiro_p_value_delta"].notna() & (out["shapiro_p_value_delta"] < 0.05),
+            out["t_p_value_bh_fdr"].notna() & (out["t_p_value_bh_fdr"] < 0.05),
+        ],
+        ["low_n_interpret_cautiously", "non_normal_delta_check_wilcoxon", "fdr_significant_ttest"],
+        default="descriptive_or_not_fdr_significant",
+    )
+    cols = [
+        "condition", "metric", "metric_role", "n_subjects", "mean_delta_condition_minus_clean",
+        "delta_ci_low", "delta_ci_high", "median_delta_condition_minus_clean", "median_delta_ci_low",
+        "median_delta_ci_high", "cohens_dz", "cohens_dz_magnitude", "n_worse_than_clean",
+        "pct_worse_than_clean", "n_better_than_clean", "pct_better_than_clean", "sign_test_p_value_bh_fdr",
+        "evidence_flag",
+    ]
+    return out[[c for c in cols if c in out.columns]].sort_values(["metric_role", "metric", "condition"]).reset_index(drop=True)
+
+
+def sensitivity_summary(paired: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    if paired.empty:
+        return pd.DataFrame(rows)
+    for condition, g in paired.groupby("condition", dropna=False):
+        for metric in [PRIMARY_METRIC] + SECONDARY_METRICS + CALIBRATION_METRICS:
+            d = g[g["metric"] == metric]
+            if d.empty:
+                rows.append({"condition": condition, "metric": metric, "available": False, "role": "calibration" if metric in CALIBRATION_METRICS else "primary_or_secondary"})
+                continue
+            r = d.iloc[0]
+            rows.append({
+                "condition": condition,
+                "metric": metric,
+                "available": True,
+                "role": r["metric_role"],
+                "n_subjects": int(r["n_subjects"]),
+                "mean_delta_condition_minus_clean": float(r["mean_delta_condition_minus_clean"]),
+                "pct_worse_than_clean": float(r["pct_worse_than_clean"]),
+                "ttest_fdr": float(r["t_p_value_bh_fdr"]) if pd.notna(r.get("t_p_value_bh_fdr", np.nan)) else np.nan,
+                "wilcoxon_fdr": float(r["wilcoxon_p_value_bh_fdr"]) if pd.notna(r.get("wilcoxon_p_value_bh_fdr", np.nan)) else np.nan,
+                "interpretation": "primary" if metric == PRIMARY_METRIC else ("secondary" if metric in SECONDARY_METRICS else "calibration_optional"),
+            })
+    return pd.DataFrame(rows)
+
+
+def overclaim_flags(subj: pd.DataFrame, paired: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    n_subjects = int(subj["subject"].nunique())
+    stressors = set(subj["stressor"].dropna().astype(str))
+    rows.append({"flag": "low_subject_count", "triggered": n_subjects < 20, "detail": f"n_subjects={n_subjects}; population-level claims should be cautious below 20 subjects."})
+    rows.append({"flag": "development_subset_prefix", "triggered": "dev" in prefix.lower(), "detail": "Prefix contains 'dev'; treat as development output, not final population estimate."})
+    missing_cal = [m for m in CALIBRATION_METRICS if subj[m].isna().all()]
+    rows.append({"flag": "missing_calibration_metrics", "triggered": bool(missing_cal), "detail": "Missing optional calibration metrics: " + (", ".join(missing_cal) if missing_cal else "none")})
+    rows.append({"flag": "cross_session_absent", "triggered": "cross_session" not in stressors, "detail": "Cross-session stressor absent." if "cross_session" not in stressors else "Cross-session stressor present."})
+    failed_files = sorted(Path("results").glob(f"{prefix}*failed_subjects*"))
+    rows.append({"flag": "skipped_subject_log_present", "triggered": bool(failed_files), "detail": f"Found {len(failed_files)} failed-subject log files matching prefix."})
+    if not paired.empty:
+        min_n = int(paired["n_subjects"].min())
+        rows.append({"flag": "uneven_or_low_paired_n", "triggered": min_n < n_subjects or min_n < 5, "detail": f"minimum paired n={min_n}; total subject n={n_subjects}."})
+    return pd.DataFrame(rows)
 
 
 def channel_dropout_slopes(subj: pd.DataFrame) -> pd.DataFrame:
@@ -137,7 +256,6 @@ def channel_dropout_slopes(subj: pd.DataFrame) -> pd.DataFrame:
     keep = subj[subj["stressor"].isin(["clean", "channel_dropout"])].copy()
     keep["dropout_fraction"] = keep["dropout_fraction"].astype(float)
     for (dataset, pipeline, subject), g in keep.groupby(["dataset", "pipeline", "subject"], dropna=False):
-        # One row per fraction is expected in subject summaries. If not, average conservatively.
         agg = g.groupby("dropout_fraction", as_index=False)[METRICS].mean(numeric_only=True)
         if agg["dropout_fraction"].nunique() < 3:
             continue
@@ -146,20 +264,12 @@ def channel_dropout_slopes(subj: pd.DataFrame) -> pd.DataFrame:
             if len(d) < 3:
                 continue
             fit = stats.linregress(d["dropout_fraction"], d[metric])
-            rows.append(
-                {
-                    "dataset": dataset,
-                    "pipeline": pipeline,
-                    "subject": subject,
-                    "metric": metric,
-                    "n_conditions": int(len(d)),
-                    "slope_per_100pct_dropout": float(fit.slope),
-                    "slope_per_10pct_dropout": float(fit.slope * 0.10),
-                    "intercept": float(fit.intercept),
-                    "r_value": float(fit.rvalue),
-                    "p_value_subject_slope": float(fit.pvalue),
-                }
-            )
+            rows.append({
+                "dataset": dataset, "pipeline": pipeline, "subject": subject, "metric": metric,
+                "n_conditions": int(len(d)), "slope_per_100pct_dropout": float(fit.slope),
+                "slope_per_10pct_dropout": float(fit.slope * 0.10), "intercept": float(fit.intercept),
+                "r_value": float(fit.rvalue), "p_value_subject_slope": float(fit.pvalue),
+            })
     return pd.DataFrame(rows)
 
 
@@ -172,26 +282,16 @@ def slope_population_summary(slopes: pd.DataFrame) -> pd.DataFrame:
         if len(vals) < 2:
             continue
         lo, hi = t_ci_mean(vals)
-        test = stats.ttest_1samp(vals, 0.0)
+        ttest = stats.ttest_1samp(vals, 0.0)
         shapiro_p = float(stats.shapiro(vals).pvalue) if 3 <= len(vals) <= 5000 else np.nan
         harmful = vals < 0 if metric in BENEFIT_METRICS else vals > 0
-        rows.append(
-            {
-                "dataset": dataset,
-                "pipeline": pipeline,
-                "metric": metric,
-                "n_subjects": int(len(vals)),
-                "mean_slope_per_10pct_dropout": float(vals.mean()),
-                "slope_ci_low": lo,
-                "slope_ci_high": hi,
-                "slope_sd": float(vals.std(ddof=1)),
-                "t_statistic_vs_zero": float(test.statistic),
-                "t_p_value_vs_zero": float(test.pvalue),
-                "shapiro_p_value_slope": shapiro_p,
-                "n_harmful_slope": int(harmful.sum()),
-                "pct_harmful_slope": float(harmful.mean()),
-            }
-        )
+        rows.append({
+            "dataset": dataset, "pipeline": pipeline, "metric": metric, "n_subjects": int(len(vals)),
+            "mean_slope_per_10pct_dropout": float(vals.mean()), "slope_ci_low": lo, "slope_ci_high": hi,
+            "slope_sd": float(vals.std(ddof=1)), "t_statistic_vs_zero": float(ttest.statistic),
+            "t_p_value_vs_zero": float(ttest.pvalue), "shapiro_p_value_slope": shapiro_p,
+            "n_harmful_slope": int(harmful.sum()), "pct_harmful_slope": float(harmful.mean()),
+        })
     out = pd.DataFrame(rows)
     if not out.empty and out["t_p_value_vs_zero"].notna().any():
         mask = out["t_p_value_vs_zero"].notna()
@@ -219,22 +319,11 @@ def methods_audit(subj: pd.DataFrame) -> pd.DataFrame:
 
 
 def report_table(paired: pd.DataFrame) -> pd.DataFrame:
-    cols = [
-        "condition",
-        "metric",
-        "n_subjects",
-        "clean_mean",
-        "condition_mean",
-        "mean_delta_condition_minus_clean",
-        "delta_ci_low",
-        "delta_ci_high",
-        "cohens_dz",
-        "t_p_value_bh_fdr",
-        "wilcoxon_p_value_bh_fdr",
-        "shapiro_p_value_delta",
-        "pct_worse_than_clean",
-    ]
-    return paired.loc[paired["metric"].isin(["roc_auc", "balanced_accuracy"]), cols].sort_values(["metric", "condition"]).reset_index(drop=True)
+    cols = ["condition", "metric", "metric_role", "n_subjects", "clean_mean", "condition_mean",
+        "mean_delta_condition_minus_clean", "delta_ci_low", "delta_ci_high", "median_delta_condition_minus_clean",
+        "cohens_dz", "t_p_value_bh_fdr", "wilcoxon_p_value_bh_fdr", "sign_test_p_value_bh_fdr",
+        "shapiro_p_value_delta", "pct_worse_than_clean"]
+    return paired.loc[paired["metric"].isin(["roc_auc", "balanced_accuracy"]), [c for c in cols if c in paired.columns]].sort_values(["metric", "condition"]).reset_index(drop=True)
 
 
 def write_latex_table(table: pd.DataFrame, path: Path) -> None:
@@ -246,28 +335,23 @@ def write_latex_table(table: pd.DataFrame, path: Path) -> None:
     path.write_text(out.to_latex(index=False, escape=True), encoding="utf-8")
 
 
-def write_markdown_summary(audit: pd.DataFrame, paired: pd.DataFrame, slopes_pop: pd.DataFrame, path: Path, prefix: str) -> None:
+def write_markdown_summary(audit: pd.DataFrame, paired: pd.DataFrame, slopes_pop: pd.DataFrame, sensitivity: pd.DataFrame, flags: pd.DataFrame, path: Path, prefix: str) -> None:
     key = report_table(paired)
     txt = [
-        f"# Statistical reporting pack for `{prefix}`",
-        "",
-        "Generated from existing subject-summary CSV files only; no simulated or additional benchmark observations are used.",
-        "",
-        "## Methods audit",
-        audit.to_markdown(index=False),
-        "",
-        "## Paired stressor effects vs clean all-channel baseline",
-        key.to_markdown(index=False),
-        "",
-        "## Channel-dropout slopes",
-        slopes_pop.to_markdown(index=False) if not slopes_pop.empty else "No channel-dropout slope table was produced.",
-        "",
+        f"# Statistical reporting pack for `{prefix}`", "",
+        "Generated from existing subject-summary CSV files only; no simulated or additional benchmark observations are used.", "",
+        "## Methods audit", audit.to_markdown(index=False), "",
+        "## Paired stressor effects vs clean all-channel baseline", key.to_markdown(index=False), "",
+        "## Sensitivity summary", sensitivity.to_markdown(index=False) if not sensitivity.empty else "No sensitivity table was produced.", "",
+        "## Channel-dropout slopes", slopes_pop.to_markdown(index=False) if not slopes_pop.empty else "No channel-dropout slope table was produced.", "",
+        "## Overclaim-risk flags", flags.to_markdown(index=False) if not flags.empty else "No overclaim flags were produced.", "",
         "## Statistical notes",
         "- Paired effects are computed within subject against the clean all-channel baseline.",
         "- Confidence intervals for mean paired deltas and slopes use Student t intervals.",
+        "- Median-delta intervals use a distribution-free sign-test/order-statistic interval.",
         "- Normality of paired deltas/slopes is screened with Shapiro-Wilk where sample size permits.",
-        "- Wilcoxon signed-rank tests are reported as non-parametric sensitivity checks for paired deltas.",
-        "- Benjamini-Hochberg false discovery rate correction is applied to the paired t-test and Wilcoxon p-values.",
+        "- Wilcoxon signed-rank and sign tests are reported as sensitivity checks for paired deltas.",
+        "- Benjamini-Hochberg false discovery rate correction is applied to paired t-test, Wilcoxon, and sign-test p-values.",
     ]
     path.write_text("\n".join(txt), encoding="utf-8")
 
@@ -278,13 +362,15 @@ def main() -> None:
     ap.add_argument("--reports-dir", type=Path, default=Path("reports"))
     ap.add_argument("--prefix", default="PhysionetMI_PhysionetMI_all_riemann_lr")
     args = ap.parse_args()
-
     args.results_dir.mkdir(parents=True, exist_ok=True)
     args.reports_dir.mkdir(parents=True, exist_ok=True)
 
     subj = load_subject_summary(args.results_dir, args.prefix)
     audit = methods_audit(subj)
     paired = paired_condition_effects(subj)
+    effects = effect_size_interpretation(paired)
+    sensitivity = sensitivity_summary(paired)
+    flags = overclaim_flags(subj, paired, args.prefix)
     slopes = channel_dropout_slopes(subj)
     slopes_pop = slope_population_summary(slopes)
     table = report_table(paired)
@@ -292,6 +378,9 @@ def main() -> None:
     outputs = {
         "methods_audit": args.results_dir / f"{args.prefix}_statistical_methods_audit.csv",
         "paired_effects": args.results_dir / f"{args.prefix}_statistical_paired_effects.csv",
+        "effect_size_interpretation": args.results_dir / f"{args.prefix}_statistical_effect_size_interpretation.csv",
+        "sensitivity_summary": args.results_dir / f"{args.prefix}_statistical_sensitivity_summary.csv",
+        "overclaim_flags": args.results_dir / f"{args.prefix}_statistical_overclaim_flags.csv",
         "channel_dropout_subject_slopes": args.results_dir / f"{args.prefix}_statistical_channel_dropout_subject_slopes.csv",
         "channel_dropout_slope_summary": args.results_dir / f"{args.prefix}_statistical_channel_dropout_slope_summary.csv",
         "report_table_csv": args.results_dir / f"{args.prefix}_statistical_report_table.csv",
@@ -300,11 +389,14 @@ def main() -> None:
     }
     audit.to_csv(outputs["methods_audit"], index=False)
     paired.to_csv(outputs["paired_effects"], index=False)
+    effects.to_csv(outputs["effect_size_interpretation"], index=False)
+    sensitivity.to_csv(outputs["sensitivity_summary"], index=False)
+    flags.to_csv(outputs["overclaim_flags"], index=False)
     slopes.to_csv(outputs["channel_dropout_subject_slopes"], index=False)
     slopes_pop.to_csv(outputs["channel_dropout_slope_summary"], index=False)
     table.to_csv(outputs["report_table_csv"], index=False)
     write_latex_table(table, outputs["report_table_tex"])
-    write_markdown_summary(audit, paired, slopes_pop, outputs["markdown_summary"], args.prefix)
+    write_markdown_summary(audit, paired, slopes_pop, sensitivity, flags, outputs["markdown_summary"], args.prefix)
 
     manifest = {
         "prefix": args.prefix,
@@ -315,7 +407,7 @@ def main() -> None:
         "note": "Derived from existing subject summary CSV only; no simulated data used.",
     }
     manifest_path = args.results_dir / f"{args.prefix}_statistical_report_manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(manifest, indent=2))
 
 

@@ -131,6 +131,25 @@ Convenience target:
 make all-dev10
 ```
 
+
+
+## Publication readiness gate
+
+This release includes repository metadata and a reproducibility gate intended for methods-review workflows:
+
+```bash
+make publication-check
+```
+
+The gate compiles scripts, runs unit tests, validates included reference result tables, regenerates statistical reporting packs, and writes `reports/release_manifest.json` with file hashes, selected package versions, validation summaries, and expected-output checks.
+
+Repository metadata included for commit readiness:
+
+- `LICENSE`: BSD-3-Clause license text matching `pyproject.toml`.
+- `CITATION.cff`: citation metadata with a placeholder contributor entry to replace before submission.
+- `.github/workflows/ci.yml`: continuous-integration workflow for compile, tests, validation, and manifest generation.
+- `MANUSCRIPT_PLACEHOLDER.md`: explicit placeholder because manuscript/paper sources are intentionally not included in this snapshot.
+
 ## Main outputs
 
 For a run prefix such as `PhysionetMI_dev10`, the pipeline writes:
