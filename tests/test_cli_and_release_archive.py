@@ -15,10 +15,20 @@ SCRIPT_NAMES = [
     "run_benchmark.py",
     "validate_results.py",
 ]
+FIGURE_PREFIX = "BNCI2014-001_BNCI2014_001_all_riemann_lr"
 
-SPEC = importlib.util.spec_from_file_location("build_release_archive", ROOT / "scripts" / "build_release_archive.py")
-build_release_archive = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(build_release_archive)
+SPEC_ARCHIVE = importlib.util.spec_from_file_location("build_release_archive", ROOT / "scripts" / "build_release_archive.py")
+build_release_archive = importlib.util.module_from_spec(SPEC_ARCHIVE)
+SPEC_ARCHIVE.loader.exec_module(build_release_archive)
+
+SPEC_FIGURES = importlib.util.spec_from_file_location("generate_methods_figures", ROOT / "scripts" / "generate_methods_figures.py")
+generate_methods_figures = importlib.util.module_from_spec(SPEC_FIGURES)
+SPEC_FIGURES.loader.exec_module(generate_methods_figures)
+
+
+def ensure_required_method_figures_exist():
+    """Create required figure artifacts from committed CSVs for clean CI checkouts."""
+    generate_methods_figures.generate_figures(ROOT / "results", ROOT / "reports", FIGURE_PREFIX, "roc_auc")
 
 
 def test_cli_help_smoke_for_all_scripts():
@@ -34,7 +44,8 @@ def test_run_benchmark_dry_run_smoke():
     assert "dataset" in result.stdout.lower() or "config" in result.stdout.lower()
 
 
-def test_release_archive_audit_passes_after_generated_outputs_exist():
+def test_release_archive_audit_passes_after_generating_required_outputs():
+    ensure_required_method_figures_exist()
     audit = build_release_archive.audit_release(ROOT)
     assert audit["passed"]
     assert audit["missing_required_files"] == []
@@ -43,6 +54,7 @@ def test_release_archive_audit_passes_after_generated_outputs_exist():
 
 
 def test_release_archive_builder_excludes_cache_files(tmp_path):
+    ensure_required_method_figures_exist()
     output = tmp_path / "release.zip"
     result = build_release_archive.build_archive(ROOT, output, top_level_name="release-test")
     assert result["passed"]

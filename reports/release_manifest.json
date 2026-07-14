@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-14T17:51:40.715759+00:00",
+  "generated_at_utc": "2026-07-14T18:18:07.848476+00:00",
   "python": "3.13.7",
   "platform": "Linux-4.4.0-x86_64-with-glibc2.36",
   "package_versions": {
@@ -367,7 +367,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.svg",
-      "sha256": "345423020b27294de33b378955d6cd5859e5a2acadabb078a4ee284cc9babccf",
+      "sha256": "45e4216964f2aa990d3cf9ce12ffe8fb01a5cd9667a40aaede3841ba98f71cba",
       "bytes": 32810
     },
     {
@@ -377,7 +377,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.svg",
-      "sha256": "09d738ac89d8de0513d317e6391e852bdf2b3cd666c899510c8261d875c0bcf4",
+      "sha256": "116c84252895062154623dcdc26d76872d6e3ca79511e453939a2b06db0182e6",
       "bytes": 55439
     },
     {
@@ -387,7 +387,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.svg",
-      "sha256": "2ed133cd3479746e41dc5868a4be5cc5f1e6b96a6a45cd1859764a437e006498",
+      "sha256": "0ebd0a737fb3ef01e455a1b4a7b682163097ab8c4ee00a037f59bbb6b5d04ab4",
       "bytes": 41906
     },
     {
@@ -432,7 +432,7 @@
     },
     {
       "path": "reports/release_manifest.json",
-      "sha256": "bef2f98ca82a7d90c41a5d10705d52b2096992da9fd008329929b1b082158e49",
+      "sha256": "7b212c5498173d1632cb5714df48e5956d4f2ab0e285cf35d1bae441c5c4bbad",
       "bytes": 34755
     },
     {
@@ -897,8 +897,8 @@
     },
     {
       "path": "tests/test_cli_and_release_archive.py",
-      "sha256": "4423923f0729d7184cbc78ddc9d2787dec77fc426f83df2aff8a628a5a8eee6a",
-      "bytes": 2029
+      "sha256": "fb50c1b537fe31b121beb699ce4916b7d3df1c180822962a1bb97c7a3e0527ed",
+      "bytes": 2707
     },
     {
       "path": "tests/test_core.py",
