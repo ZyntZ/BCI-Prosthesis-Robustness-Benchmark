@@ -17,6 +17,11 @@ import pandas as pd
 
 KEY_COLS = ["dataset", "subject", "pipeline", "stressor", "montage", "dropout_fraction"]
 FOLD_KEY_COLS = KEY_COLS + ["fold", "repeat"]
+# Optional fold-level disambiguators. Region-dropout rows can share the same
+# dropout_fraction/fold/repeat while dropping different named channel regions;
+# these columns are intentionally absent from subject summaries, where such rows
+# are averaged to subject-condition level.
+OPTIONAL_FOLD_KEY_COLS = ["region", "dropped_channels", "selected_channels", "session_train", "session_test"]
 METRIC_BOUNDS = {
     "roc_auc": (0.0, 1.0),
     "balanced_accuracy": (0.0, 1.0),
@@ -82,12 +87,20 @@ def validate_metric_ranges(df: pd.DataFrame, rows: list[dict[str, object]], labe
         )
 
 
-def validate_duplicate_rows(df: pd.DataFrame, rows: list[dict[str, object]], label: str, key_cols: list[str]) -> None:
+def validate_duplicate_rows(
+    df: pd.DataFrame,
+    rows: list[dict[str, object]],
+    label: str,
+    key_cols: list[str],
+    optional_key_cols: list[str] | None = None,
+) -> None:
     available = [c for c in key_cols if c in df.columns]
     if len(available) != len(key_cols):
         add_issue(rows, "error", f"{label}_duplicate_key_available", False, f"Cannot test duplicates without columns: {sorted(set(key_cols) - set(available))}")
         return
-    dup = df.duplicated(available, keep=False)
+    optional_available = [c for c in (optional_key_cols or []) if c in df.columns and df[c].notna().any()]
+    duplicate_key = available + optional_available
+    dup = df.duplicated(duplicate_key, keep=False)
     add_issue(
         rows,
         "error",
@@ -95,6 +108,7 @@ def validate_duplicate_rows(df: pd.DataFrame, rows: list[dict[str, object]], lab
         not bool(dup.any()),
         "No duplicate rows for declared evaluation key" if not bool(dup.any()) else f"{int(dup.sum())} rows share a declared evaluation key",
         n_duplicate_rows=int(dup.sum()),
+        key_columns=",".join(duplicate_key),
     )
 
 
@@ -199,7 +213,7 @@ def validate_prefix(results_dir: Path, prefix: str) -> tuple[pd.DataFrame, dict[
     subject = _load_csv(results_dir / f"{prefix}_subject_summary.csv", REQUIRED_SUBJECT_COLUMNS, rows, "subject_summary")
     if not results.empty:
         validate_metric_ranges(results, rows, "fold_results")
-        validate_duplicate_rows(results, rows, "fold_results", FOLD_KEY_COLS)
+        validate_duplicate_rows(results, rows, "fold_results", FOLD_KEY_COLS, OPTIONAL_FOLD_KEY_COLS)
         validate_channel_counts(results, rows, "fold_results")
     if not subject.empty:
         validate_metric_ranges(subject, rows, "subject_summary")
