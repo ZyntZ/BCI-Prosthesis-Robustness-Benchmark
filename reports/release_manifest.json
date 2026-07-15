@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-15T12:57:13.868789+00:00",
+  "generated_at_utc": "2026-07-15T13:50:06.304988+00:00",
   "python": "3.13.7",
   "platform": "Linux-4.4.0-x86_64-with-glibc2.36",
   "package_versions": {
@@ -302,13 +302,13 @@
     },
     {
       "path": "Makefile",
-      "sha256": "f1b3bb4b4854b806bca8291e09a2b8506c4843821cea47f5bf0bc542f0a7b75e",
-      "bytes": 6186
+      "sha256": "3181e60df9be972bc2125f4f4dfaf92a98891aef837d6de10d76be2537f8ddae",
+      "bytes": 6176
     },
     {
       "path": "README.md",
-      "sha256": "eef02130c53a007eda181d888145b3bc4e99e8e795ff4146ebac73209918e501",
-      "bytes": 9981
+      "sha256": "330c175c506e11eaf0e8271cf9128b344861099f2407f11d47d55151ba252beb",
+      "bytes": 10118
     },
     {
       "path": "REPRODUCIBILITY.md",
@@ -362,8 +362,8 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_figures_manifest.json",
-      "sha256": "d25ac29baee27479fc87eff40d4914f45245f1bc46b114b36a351ee49507bd66",
-      "bytes": 1725
+      "sha256": "1b71a50ada943f8b665ec76a2548bdc605b7670fa8e0a0d8b269ded0ea19105e",
+      "bytes": 1245
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.png",
@@ -372,7 +372,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.svg",
-      "sha256": "dd3f861cd230e8ef58ba4a548646cb1b4a45af73e9149997fdb77989c4e90210",
+      "sha256": "e6513ca50cef790707cc398e6f2345c3c4df6648584d1345ebe9cf7a31779692",
       "bytes": 32810
     },
     {
@@ -382,7 +382,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.svg",
-      "sha256": "9fa81f0ba0cbaa173c002f169a62bc0dc79d6824b22a45a9389ad51cc4c3c475",
+      "sha256": "2f6958a37ec55757ce5a20db388b9aff038107d8cac43ced414be2cf3bc19283",
       "bytes": 55439
     },
     {
@@ -392,7 +392,7 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.svg",
-      "sha256": "3efdf27f838a2ed9efad464da891efde60b0e5b72bb31a041e0967477f0cd2b4",
+      "sha256": "2ba7ae1834172e1c9e0c0ccb41ad656b3467b5a5f9f8778c3a73251e89e29e74",
       "bytes": 41906
     },
     {
@@ -437,8 +437,8 @@
     },
     {
       "path": "reports/release_manifest.json",
-      "sha256": "ee46f92ad902b2791699fe681c6b00d085074b01b23ba60de06228ef7afe9f97",
-      "bytes": 35613
+      "sha256": "99a82005682bb46e5b476d9259ef7b06eb6b9717bff0b09eeced94be8aa09d2b",
+      "bytes": 34655
     },
     {
       "path": "reports/submission_readiness_checks.csv",
@@ -676,21 +676,6 @@
       "bytes": 10293
     },
     {
-      "path": "results/BNCI2014-001_BNCI2014_001_subject1_csp_lda_population_summary.csv",
-      "sha256": "f313a91b37dfbe117689e668b415cec71fef2518d74059feb6eb4f5f577923f3",
-      "bytes": 1438
-    },
-    {
-      "path": "results/BNCI2014-001_BNCI2014_001_subject1_csp_lda_results.csv",
-      "sha256": "6ef8fe19a45eeb8979c2a79fd04dac596bfef55182fe11e6365e1aa4b3f872b3",
-      "bytes": 29528
-    },
-    {
-      "path": "results/BNCI2014-001_BNCI2014_001_subject1_csp_lda_subject_summary.csv",
-      "sha256": "f7a0e1da4ec7a21ece52a8f5b2a808715963653a8faf2a87068594c6c4c45dc7",
-      "bytes": 1238
-    },
-    {
       "path": "results/PhysionetMI_dev10_failure_rates_next.csv",
       "sha256": "fe23b5dd079e36030b251f57eb39b15cb3b66dfee41cd7e06af7236efc760312",
       "bytes": 338
@@ -839,16 +824,6 @@
       "path": "results/PhysionetMI_dev10_subject_wide.csv",
       "sha256": "ab8b7bea4182b921926a4228c8f2ef303e326e604cfa021a11875582e3a63603",
       "bytes": 2226
-    },
-    {
-      "path": "results/PhysionetMI_dropout_results.csv",
-      "sha256": "33931249c75d7c6cfc9a931a29db2b1bb2ea4b7d0f5b0eb4e1bd9f7bfa59f946",
-      "bytes": 19080
-    },
-    {
-      "path": "results/PhysionetMI_dropout_summary.csv",
-      "sha256": "1f06b349ac5683a3559305d5f03724ae4d3e69685a2ba345c37f275655829fdf",
-      "bytes": 347
     },
     {
       "path": "run_all.sh",

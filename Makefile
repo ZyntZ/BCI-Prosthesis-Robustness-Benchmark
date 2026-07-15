@@ -85,6 +85,6 @@ archive-audit: submission-readiness
 	$(PYTHON) scripts/build_release_archive.py --audit-only
 
 release-archive: archive-audit
-	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_submission_readiness_update.zip
+	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_clean_paper_start.zip
 
 publication-check: compile-check test submission-readiness archive-audit

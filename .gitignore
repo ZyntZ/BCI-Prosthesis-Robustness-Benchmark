@@ -1,4 +1,4 @@
-# Python
+# Python caches/build products
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -11,26 +11,16 @@ __pycache__/
 .idea/
 .vscode/
 
-# Local data/cache paths
+# Local raw data/cache paths
 moabb_data/
 mne_data/
+data/
 
-# Generated benchmark run state
+# Long-run transient state and release archives
 results/checkpoints/
-results/*_statistical_*.csv
-results/*_statistical_*.json
-reports/*_statistical_*.tex
-reports/*_statistical_*.md
-reports/*.html
-reports/*.png
-
-# Local logs and notebooks
-*.log
-*.ipynb_checkpoints/
-
 dist/
 *.zip
-__pycache__/
-.pytest_cache/
-*.pyc
-*.pyo
+
+# Local logs/notebook checkpoints
+*.log
+*.ipynb_checkpoints/

@@ -203,6 +203,7 @@ Inference is performed after collapsing fold/repeat outputs to subject-level sum
 - BNCI2014-001 outputs cover subjects 1-9 for the included CSP+LDA and Riemannian baseline runs.
 - Metrics based on predicted probabilities, such as Brier score and expected calibration error, are available only when the fitted pipeline exposes usable probability estimates.
 - Raw EEG downloads are intentionally not included in this repository.
+- One-off pilot outputs not used by the current validation/release manifest are intentionally excluded from the cleaned paper-start archive.
 
 ## Technical status
 
@@ -211,4 +212,4 @@ This repository snapshot is for technical development of the benchmark code, res
 
 ## Release archive audit
 
-Run `make release-archive` to audit required metadata, validation outputs, statistical reports, methods figures, and filename hygiene before writing `dist/JNM_release_polish_update.zip`. The audit excludes caches, bytecode, raw-data-like directories, and local temporary files.
+Run `make release-archive` to audit required metadata, validation outputs, statistical reports, methods figures, and filename hygiene before writing `dist/JNM_clean_paper_start.zip`. The audit excludes caches, bytecode, raw-data-like directories, and local temporary files.
