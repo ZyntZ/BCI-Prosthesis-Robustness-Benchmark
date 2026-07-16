@@ -21,7 +21,6 @@ import yaml
 try:
     from moabb.datasets import BNCI2014_001, PhysionetMI
     from moabb.paradigms import LeftRightImagery
-    from moabb.utils import set_download_dir
 except ModuleNotFoundError as exc:  # pragma: no cover - depends on optional runtime package
     BNCI2014_001 = None
     PhysionetMI = None
@@ -57,6 +56,16 @@ def require_moabb() -> None:
             "MOABB is required for dataset listing and benchmark execution. "
             "Install dependencies with `pip install -r requirements.txt` or the conda environment."
         ) from _MOABB_IMPORT_ERROR
+
+
+def set_download_dir(path: str | Path) -> None:
+    """Configure the MNE/MOABB data directory without relying on MOABB internals."""
+    require_moabb()
+    from mne import set_config
+
+    download_dir = Path(path).expanduser().resolve()
+    download_dir.mkdir(parents=True, exist_ok=True)
+    set_config("MNE_DATA", str(download_dir), set_env=False)
 
 
 def load_config(path: Path) -> dict:

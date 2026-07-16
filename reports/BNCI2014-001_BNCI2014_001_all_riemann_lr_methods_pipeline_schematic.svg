@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-07-15T16:13:43.222941</dc:date>
+    <dc:date>2026-07-16T18:07:54.331244</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -1192,8 +1192,8 @@ z
     </g>
    </g>
    <g id="text_10">
-    <!-- channel_dropout, clean, cross_session, reduced_montage -->
-    <g style="fill: #666666" transform="translate(181.6395 76.116881) scale(0.064 -0.064)">
+    <!-- channel_dropout, clean, cross_session, reduced_montage, region_dropout -->
+    <g style="fill: #666666" transform="translate(155.3815 76.116881) scale(0.064 -0.064)">
      <defs>
       <path id="DejaVuSans-75" d="M 544 1381 
 L 544 3500 
@@ -1306,6 +1306,22 @@ z
      <use xlink:href="#DejaVuSans-61" transform="translate(2693.933594 0)"/>
      <use xlink:href="#DejaVuSans-67" transform="translate(2755.212891 0)"/>
      <use xlink:href="#DejaVuSans-65" transform="translate(2818.689453 0)"/>
+     <use xlink:href="#DejaVuSans-2c" transform="translate(2880.212891 0)"/>
+     <use xlink:href="#DejaVuSans-20" transform="translate(2912 0)"/>
+     <use xlink:href="#DejaVuSans-72" transform="translate(2943.787109 0)"/>
+     <use xlink:href="#DejaVuSans-65" transform="translate(2982.650391 0)"/>
+     <use xlink:href="#DejaVuSans-67" transform="translate(3044.173828 0)"/>
+     <use xlink:href="#DejaVuSans-69" transform="translate(3107.650391 0)"/>
+     <use xlink:href="#DejaVuSans-6f" transform="translate(3135.433594 0)"/>
+     <use xlink:href="#DejaVuSans-6e" transform="translate(3196.615234 0)"/>
+     <use xlink:href="#DejaVuSans-5f" transform="translate(3259.994141 0)"/>
+     <use xlink:href="#DejaVuSans-64" transform="translate(3309.994141 0)"/>
+     <use xlink:href="#DejaVuSans-72" transform="translate(3373.470703 0)"/>
+     <use xlink:href="#DejaVuSans-6f" transform="translate(3412.333984 0)"/>
+     <use xlink:href="#DejaVuSans-70" transform="translate(3473.515625 0)"/>
+     <use xlink:href="#DejaVuSans-6f" transform="translate(3536.992188 0)"/>
+     <use xlink:href="#DejaVuSans-75" transform="translate(3598.173828 0)"/>
+     <use xlink:href="#DejaVuSans-74" transform="translate(3661.552734 0)"/>
     </g>
    </g>
    <g id="patch_6">
