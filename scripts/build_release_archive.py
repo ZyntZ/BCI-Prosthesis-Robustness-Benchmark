@@ -32,7 +32,7 @@ EXCLUDE_DIRS = {
 }
 EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".zip", ".html"}
 EXCLUDE_NAME_TOKENS = [
-    "PhysionetMI_dev10", "PhysionetMI_Physionet_csp_preflight",
+    "PhysionetMI_Physionet_csp_preflight",
     "_next_", "paired_stats_next", "failure_rates_next", "next_summary",
 ]
 EXCLUDE_EXACT_NAMES = {"run_all.sh"}

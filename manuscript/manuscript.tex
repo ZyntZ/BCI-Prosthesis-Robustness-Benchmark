@@ -1,22 +1,14 @@
 \documentclass[11pt]{article}
 \usepackage[margin=2.4cm]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage{microtype}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{threeparttable}
-\usepackage{tabularx}
-\usepackage{array}
-\usepackage{siunitx}
 \usepackage{lineno}
-\usepackage{setspace}
 \usepackage{caption}
-\usepackage{subcaption}
 \usepackage{placeins}
 \usepackage[hidelinks]{hyperref}
 \captionsetup{font=small,labelfont=bf}
-\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\auc}{\ensuremath{\mathrm{ROC\mbox{-}AUC}}}
 \title{Stress-testing motor-imagery EEG decoders under channel loss and reduced montages: a reproducible benchmark of CSP--LDA and Riemannian logistic regression}
 \author{Anna Nikolaevna Sokolova\\
@@ -69,7 +61,7 @@ Reduced-montage analyses differed from dropout analyses: both training and test 
 \subsection{Outcomes and statistical analysis}
 The prespecified primary outcome was ROC-AUC. Balanced accuracy was secondary. Brier score and 10-bin equal-width expected calibration error were calculated when probability estimates were available.
 
-Fold and repeat rows were first averaged within participant and condition. Population inference therefore used participants, not folds or repeats, as independent units. Each stressor was compared with the participant's clean all-channel result. We report mean paired change with a two-sided 95\% Student $t$ interval, paired $t$ test, Cohen's $d_z$, Wilcoxon signed-rank sensitivity test, and a sign test. Benjamini--Hochberg false-discovery-rate correction was applied within each test family across available conditions \cite{Benjamini_1995}. Shapiro--Wilk tests described the distribution of paired changes.
+Fold and repeat rows were first averaged within participant and condition. Population inference therefore used participants, not folds or repeats, as independent units. Population-level condition means used subject-level bias-corrected and accelerated bootstrap intervals with 2,000 resamples and seed 42. Each stressor was compared with the participant's clean all-channel result. For paired changes, we report a two-sided 95\% Student $t$ interval, paired $t$ test, Cohen's $d_z$, Wilcoxon signed-rank sensitivity test, and an exact sign test. Benjamini--Hochberg false-discovery-rate correction was applied within each test family across available conditions \cite{Benjamini_1995}. Shapiro--Wilk tests described the distribution of paired changes.
 
 For the direct PhysioNet decoder comparison, subject and condition were matched one-to-one. The estimand was ROC-AUC for CSP--LDA minus ROC-AUC for Riemann--LR; negative values favor Riemann--LR. We report the proportion of participants for whom CSP--LDA was better and exact binomial confidence intervals. Because the legacy Riemann--LR subject summary retained regional dropout fractions but not region names, left and right CSP rows sharing 9/64 dropout were averaged before matching. No missing observations were imputed.
 

@@ -5,7 +5,8 @@ Only observed subject-level summaries are used. Legacy region-dropout rows witho
 region labels are harmonized by dropout fraction; no missing region is imputed.
 """
 from __future__ import annotations
-import argparse, json
+import argparse
+import json
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -84,6 +85,21 @@ def tex_table(df):
     return x.to_latex(index=False,escape=True,caption='Subject-paired ROC-AUC comparison of CSP-LDA and Riemann-LR.',label='tab:pipeline-comparison')
 
 
+def dataframe_to_markdown(df: pd.DataFrame) -> str:
+    """Render a GitHub-flavored Markdown table without optional dependencies."""
+    def cell(value: object) -> str:
+        if pd.isna(value):
+            return "NA"
+        if isinstance(value, (float, np.floating)):
+            return f"{float(value):.6g}"
+        return str(value).replace("|", "\\|").replace("\n", " ")
+
+    headers = [str(column) for column in df.columns]
+    rows = ["| " + " | ".join(headers) + " |", "| " + " | ".join("---" for _ in headers) + " |"]
+    rows.extend("| " + " | ".join(cell(value) for value in row) + " |" for row in df.itertuples(index=False, name=None))
+    return "\n".join(rows)
+
+
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--results-dir',type=Path,default=Path('results')); ap.add_argument('--reports-dir',type=Path,default=Path('reports')); ap.add_argument('--csp-prefix',default='PhysionetMI_PhysionetMI_all_csp_lda'); ap.add_argument('--riemann-prefix',default='PhysionetMI_PhysionetMI_all_riemann_lr'); ap.add_argument('--output-prefix',default='PhysionetMI_csp_lda_vs_riemann_lr'); a=ap.parse_args()
     c=pd.read_csv(a.results_dir/f'{a.csp_prefix}_subject_summary.csv'); r=pd.read_csv(a.results_dir/f'{a.riemann_prefix}_subject_summary.csv')
@@ -91,7 +107,7 @@ def main():
     csv=a.results_dir/f'{a.output_prefix}_paired_comparison.csv'; paircsv=a.results_dir/f'{a.output_prefix}_paired_subject_differences.csv'; tex=a.reports_dir/f'{a.output_prefix}_paired_comparison.tex'; md=a.reports_dir/f'{a.output_prefix}_paired_comparison.md'; val=a.reports_dir/f'{a.output_prefix}_validation.json'; manifest=a.results_dir/f'{a.output_prefix}_manifest.json'
     table.to_csv(csv,index=False); pairs.assign(paired_difference_csp_minus_riemann=pairs.roc_auc_csp-pairs.roc_auc_riemann).to_csv(paircsv,index=False); tex.write_text(tex_table(table),encoding='utf-8')
     limitation=('The Riemann-LR summary has no named region column. Left and right motor-strip CSP rows share the same dropout fraction and were averaged for a valid like-for-like legacy fraction comparison. Separate left and right inter-model effects cannot be recovered without Riemann-LR fold-level or region-preserving subject data.')
-    md.write_text('# Paired decoder comparison\n\nPositive differences favor CSP-LDA. Tests are subject-paired; Benjamini-Hochberg correction is across compared conditions.\n\n'+table.to_markdown(index=False)+'\n\n## Limitation\n\n'+limitation+'\n',encoding='utf-8')
+    md.write_text('# Paired decoder comparison\n\nPositive differences favor CSP-LDA. Tests are subject-paired; Benjamini-Hochberg correction is across compared conditions.\n\n'+dataframe_to_markdown(table)+'\n\n## Limitation\n\n'+limitation+'\n',encoding='utf-8')
     validation={'passed':bool(len(table)==9 and table.n_subjects.eq(109).all()),'n_conditions':int(len(table)),'subjects_per_condition':{x.condition:int(x.n_subjects) for x in table.itertuples()},'harmonization_notes':notes,'limitation':limitation}
     val.write_text(json.dumps(validation,indent=2)+'\n'); manifest.write_text(json.dumps({'sources':[str(a.results_dir/f'{a.csp_prefix}_subject_summary.csv'),str(a.results_dir/f'{a.riemann_prefix}_subject_summary.csv')],'outputs':[str(csv),str(paircsv),str(tex),str(md),str(val)],'no_imputation':True,'validation_passed':validation['passed']},indent=2)+'\n')
     print(json.dumps(validation,indent=2));

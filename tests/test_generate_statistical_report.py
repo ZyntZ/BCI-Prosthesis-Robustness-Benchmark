@@ -39,7 +39,7 @@ def test_extended_statistical_tables_include_effects_sensitivity_and_flags():
     paired = generate_statistical_report.paired_condition_effects(subj)
     effects = generate_statistical_report.effect_size_interpretation(paired)
     sensitivity = generate_statistical_report.sensitivity_summary(paired)
-    flags = generate_statistical_report.overclaim_flags(subj, paired, "PhysionetMI_dev10")
+    flags = generate_statistical_report.overclaim_flags(subj, paired, "development_subset")
 
     assert not effects.empty
     assert {"median_delta_condition_minus_clean", "cohens_dz_magnitude", "evidence_flag"}.issubset(effects.columns)

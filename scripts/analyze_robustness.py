@@ -193,7 +193,6 @@ def write_dashboard(wide: pd.DataFrame, cards: pd.DataFrame, paired: pd.DataFram
 <style>body{{font-family:Arial, sans-serif; max-width:1200px; margin:30px auto; line-height:1.35}} table{{border-collapse:collapse; font-size:13px}} th,td{{border:1px solid #ccc; padding:4px 6px}} th{{background:#e8f1f8}} .note{{background:#fff8e1; padding:10px; border-left:4px solid #f0b400}}</style></head>
 <body>
 <h1>Intervention-Robust EEG Benchmark dashboard</h1>
-<div class='note'>PhysioNetMI n=10 is a development run, not a final population-level estimate.</div>
 <h2>Subject risk cards</h2>
 {cards.round(4).to_html(index=False)}
 <h2>Failure-rate estimates</h2>
@@ -214,7 +213,7 @@ def write_dashboard(wide: pd.DataFrame, cards: pd.DataFrame, paired: pd.DataFram
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument('--results-dir', type=Path, default=Path('results'))
-    ap.add_argument('--prefix', default='PhysionetMI_dev10')
+    ap.add_argument('--prefix', default='PhysionetMI_PhysionetMI_all_riemann_lr')
     ap.add_argument('--clean-working-threshold', type=float, default=0.60)
     ap.add_argument('--failure-threshold', type=float, default=0.60)
     ap.add_argument('--reports-dir', type=Path, default=Path('reports'))

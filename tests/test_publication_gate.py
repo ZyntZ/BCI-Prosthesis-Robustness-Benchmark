@@ -50,7 +50,3 @@ def test_default_release_scope_includes_full_physionet_and_uses_its_figures():
     full = "PhysionetMI_PhysionetMI_all_riemann_lr"
     assert full in build_release_manifest.DEFAULT_PREFIXES
     assert build_release_manifest.METHODS_FIGURE_PREFIXES == [full]
-
-
-def test_publication_defaults_do_not_require_excluded_dev10_artifacts():
-    assert "PhysionetMI_dev10" not in build_release_manifest.DEFAULT_PREFIXES

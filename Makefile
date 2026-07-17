@@ -12,7 +12,7 @@ MAX_CONSECUTIVE_FAILURES ?= 5
 SKIP_FAILED_FLAG = $(if $(filter 1 true yes,$(SKIP_FAILED)),--skip-failed,)
 
 
-.PHONY: compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full
+.PHONY: manuscript compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full
 
 install-lock:
 	$(PYTHON) -m pip install -r requirements-lock.txt
@@ -51,6 +51,16 @@ test:
 
 compile-check:
 	$(PYTHON) -m compileall -q scripts src
+
+manuscript:
+	@if command -v latexmk >/dev/null 2>&1; then \
+		cd manuscript && latexmk -pdf -interaction=nonstopmode -halt-on-error manuscript.tex; \
+	elif command -v pdflatex >/dev/null 2>&1; then \
+		cd manuscript && pdflatex -interaction=nonstopmode -halt-on-error manuscript.tex >/dev/null && pdflatex -interaction=nonstopmode -halt-on-error manuscript.tex >/dev/null; \
+	else \
+		echo "latexmk or pdflatex is required to build manuscript/manuscript.pdf"; exit 1; \
+	fi
+	@rm -f manuscript/manuscript.aux manuscript/manuscript.log manuscript/manuscript.out manuscript/manuscript.fls manuscript/manuscript.fdb_latexmk
 
 dry-run:
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --dry-run
@@ -184,6 +194,6 @@ archive-audit: submission-readiness
 	$(PYTHON) scripts/build_release_archive.py --audit-only
 
 release-archive: archive-audit
-	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_ci_dev10_scope_hotfix.zip
+	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_publication_readiness_update_v0.2.1.zip
 
 publication-check: compile-check test submission-readiness archive-audit
