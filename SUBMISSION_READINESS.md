@@ -5,7 +5,7 @@ This file summarizes deterministic repository checks for preparing the benchmark
 ## Status
 
 - Ready for release packaging: `true`
-- Checks run: 88
+- Checks run: 91
 - Failed errors: 0
 - Failed warnings: 1
 

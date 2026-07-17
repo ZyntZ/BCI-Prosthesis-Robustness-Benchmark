@@ -1,13 +1,17 @@
 cff-version: 1.2.0
-message: "If you use this benchmark, cite the archived release and the source datasets referenced in DATA_PROVENANCE.md. Replace the placeholder author entry before journal submission."
+message: "If you use this benchmark, cite the archived release and the source datasets referenced in DATA_PROVENANCE.md."
 title: "BCI Prosthesis Robustness Benchmark"
-version: "0.1.0"
-date-released: "2026-07-14"
+version: "0.2.0"
+date-released: "2026-07-17"
 license: "BSD-3-Clause"
 type: software
 authors:
-  - family-names: "Project contributors"
-    given-names: ""
+  - family-names: "Sokolova"
+    given-names: "Anna Nikolaevna"
+    orcid: "https://orcid.org/0009-0000-5733-9994"
+    affiliation: "Southern Federal University"
+    email: "ansokolova@sfedu.ru"
+repository-code: "https://github.com/ZyntZ/BCI-Prosthesis-Robustness-Benchmark"
 abstract: "A reproducible benchmark for motor-imagery EEG decoders under deployment-relevant stressors, with subject-level statistical reporting and validation checks."
 keywords:
   - EEG

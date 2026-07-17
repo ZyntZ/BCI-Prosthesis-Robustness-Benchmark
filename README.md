@@ -224,9 +224,9 @@ The gate compiles scripts, runs unit tests, validates included reference result 
 Repository metadata included for commit readiness:
 
 - `LICENSE`: BSD-3-Clause license text matching `pyproject.toml`.
-- `CITATION.cff`: citation metadata with a placeholder contributor entry to replace before submission.
+- `CITATION.cff`: software citation metadata with author, affiliation, contact email, and ORCID.
 - `.github/workflows/ci.yml`: continuous-integration workflow for compile, tests, validation, and manifest generation.
-- `MANUSCRIPT_PLACEHOLDER.md`: explicit placeholder because manuscript/paper sources are intentionally not included in this snapshot.
+- `manuscript/`: Journal of Neuroscience Methods manuscript source, compiled PDF, verified references, figures, highlights, and cover letter.
 
 
 
@@ -273,7 +273,7 @@ Inference is performed after collapsing fold/repeat outputs to subject-level sum
 
 ## Technical status
 
-This repository snapshot is for technical development of the benchmark code, result-processing scripts, and example outputs. Non-technical metadata and writing-stage materials are intentionally not included in this archive.
+This repository snapshot contains the benchmark code, validated outputs, reproducible environment, and a journal-oriented manuscript package.
 
 
 ## Release archive audit

@@ -35,7 +35,7 @@ EXCLUDE_NAME_TOKENS = [
     "PhysionetMI_dev10", "PhysionetMI_Physionet_csp_preflight",
     "_next_", "paired_stats_next", "failure_rates_next", "next_summary",
 ]
-EXCLUDE_EXACT_NAMES = {"run_all.sh", "MANUSCRIPT_PLACEHOLDER.md"}
+EXCLUDE_EXACT_NAMES = {"run_all.sh"}
 
 def is_journal_release_excluded(path: Path, root: Path) -> bool:
     rel = str(path.relative_to(root))
@@ -55,6 +55,9 @@ REQUIRED_FILES = [
     "REPRODUCIBILITY.md",
     "STATISTICAL_REPORTING.md",
     "SUBMISSION_READINESS.md",
+    "manuscript/manuscript.tex",
+    "manuscript/manuscript.pdf",
+    "manuscript/highlights.txt",
     ".github/workflows/ci.yml",
     "scripts/validate_results.py",
     "scripts/generate_statistical_report.py",

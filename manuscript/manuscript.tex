@@ -1,0 +1,203 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{threeparttable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{siunitx}
+\usepackage{lineno}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{placeins}
+\usepackage[hidelinks]{hyperref}
+\captionsetup{font=small,labelfont=bf}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\auc}{\ensuremath{\mathrm{ROC\mbox{-}AUC}}}
+\title{Stress-testing motor-imagery EEG decoders under channel loss and reduced montages: a reproducible benchmark of CSP--LDA and Riemannian logistic regression}
+\author{Anna Nikolaevna Sokolova\\
+\small Southern Federal University, Rostov-on-Don, Russia\\
+\small ORCID: \href{https://orcid.org/0009-0000-5733-9994}{0009-0000-5733-9994}\\
+\small Correspondence: \href{mailto:ansokolova@sfedu.ru}{ansokolova@sfedu.ru}}
+\date{}
+
+\begin{document}
+\maketitle
+\linenumbers
+
+\begin{abstract}
+\textbf{Background:} Motor-imagery electroencephalography (EEG) decoders are commonly evaluated on clean recordings, although deployment in assistive systems exposes them to electrode loss, spatially clustered failures, and reduced montages. We developed a reproducible benchmark that applies these perturbations after training and reports inference at the participant level.
+
+\textbf{Methods:} Common spatial patterns with linear discriminant analysis (CSP--LDA) and covariance-based Riemannian tangent-space logistic regression (Riemann--LR) were evaluated on PhysioNet Motor Movement/Imagery data (109 participants) and BNCI2014-001 (9 participants). The primary outcome was receiver operating characteristic area under the curve (ROC-AUC). Stressors comprised random test-time channel dropout (10--50\%), three predefined motor-region dropouts, 3- and 9-channel montages, and cross-session transfer when usable session metadata were available. Fold and repeat measurements were collapsed within participant. Paired tests, 95\% confidence intervals, Cohen's $d_z$, Wilcoxon sensitivity tests, and Benjamini--Hochberg correction were used.
+
+\textbf{Results:} On PhysioNet, 50\% random dropout reduced mean ROC-AUC from 0.655 to 0.527 for CSP--LDA (mean paired change $-0.128$, 95\% CI $-0.153$ to $-0.102$) and from 0.675 to 0.554 for Riemann--LR ($-0.121$, 95\% CI $-0.141$ to $-0.101$). Riemann--LR exceeded CSP--LDA at all four random-dropout levels; paired differences (CSP minus Riemann) ranged from $-0.051$ to $-0.027$, with false-discovery-rate-adjusted paired $t$-test $p\leq0.015$. The 9-channel montage preserved clean performance for both decoders. Cross-session evidence was available only in BNCI2014-001 and was imprecise because $n=9$.
+
+\textbf{Conclusions:} Clean-recording performance did not determine behavior under channel loss. Riemann--LR showed higher ROC-AUC under random and regional dropout on PhysioNet, while a motor-centered 9-channel montage retained performance. The benchmark separates participant-level inference from fold-level resampling and exposes provenance and model-assumption limitations.
+\end{abstract}
+
+\noindent\textbf{Keywords:} brain--computer interface; electroencephalography; motor imagery; robustness; channel dropout; common spatial patterns; Riemannian geometry; reproducibility
+
+\section{Introduction}
+Motor-imagery brain--computer interfaces (BCIs) translate electroencephalographic activity into control signals without requiring overt movement. Their relevance to assistive control depends on performance outside a clean, fixed laboratory setup. Electrode impedance changes, disconnected leads, cap displacement, and reduced wearable montages can alter the spatial information presented to a decoder. A model that performs well on intact recordings may therefore fail when deployed.
+
+Public datasets and benchmarking software have improved reproducibility in BCI research. PhysioNet provides openly accessible physiological recordings and associated software infrastructure \cite{Goldberger_2000}; its EEG Motor Movement/Imagery corpus was acquired using BCI2000 \cite{Schalk_2004} and has recently been curated to improve accessibility for decoding studies \cite{Shuqfa_2024}. BNCI2014-001 is widely used as data set 2a of BCI Competition IV \cite{Tangermann_2012}. The Mother of All BCI Benchmarks (MOABB) supports standardized access and evaluation across such datasets \cite{Jayaram_2018}. These resources reduce dataset and implementation variability, but standard accuracy estimates do not directly quantify tolerance to deployment-like sensor perturbations.
+
+We examined two established decoder families. Common spatial patterns (CSP) construct spatial filters that discriminate motor-imagery classes \cite{Ramoser_2000}. Riemannian approaches represent trial covariance matrices on the manifold of symmetric positive-definite matrices and have been effective for BCI classification \cite{Barachant_2012}. Their different representations suggest different responses to missing channels, but a comparison must pair models within the same participants and perturbation conditions.
+
+This study had three objectives: (1) quantify within-participant degradation caused by random and spatially clustered test-time channel loss; (2) test whether reduced motor-centered montages preserve discrimination when models are trained and tested on the same smaller sensor set; and (3) compare CSP--LDA with Riemann--LR under matched PhysioNet conditions. The contribution is a versioned benchmark and statistical reporting pipeline rather than a new classifier. The pipeline retains fold-level technical measurements where available, performs population inference after participant-level aggregation, and emits validation, provenance, diagnostic, and manuscript-ready outputs.
+
+\section{Materials and methods}
+\subsection{Datasets and analysis cohorts}
+We used two open motor-imagery EEG datasets through MOABB. PhysioNet Motor Movement/Imagery contributed 109 participants to each full decoder analysis. BNCI2014-001 contributed all 9 participants. The task was binary left-versus-right motor imagery, implemented through the MOABB \texttt{LeftRightImagery} paradigm. EEG was band-pass filtered from 8 to 32~Hz and resampled to 128~Hz by the paradigm interface. Raw EEG files were not redistributed.
+
+The PhysioNet CSP--LDA fold-level file contained 25,070 rows and yielded 1,090 participant-condition rows. The PhysioNet Riemann--LR release contained 981 participant-condition rows but no fold-level file. Both PhysioNet cohorts contained all 109 participants. BNCI analyses contained 90 participant-condition rows per decoder.
+
+\subsection{Decoder pipelines}
+The CSP--LDA pipeline used six CSP components, logarithmic component power, no trace normalization, and linear discriminant analysis. For a three-channel montage, the component count was limited to the number of available channels. The Riemann--LR pipeline estimated trial covariance matrices using Oracle Approximating Shrinkage, mapped them to the Riemannian tangent space, and fitted logistic regression with a maximum of 2,000 iterations. The same random seed (42) was used throughout.
+
+\subsection{Cross-validation and perturbations}
+Within each participant, intact-data performance and test-time perturbations were evaluated with shuffled stratified five-fold cross-validation. The effective fold count was reduced only if the smaller class contained fewer than five trials. A decoder was fitted on intact training folds. Random dropout then set the same sampled channel subset to zero across every epoch in the corresponding test fold. Dropout fractions were 0.10, 0.20, 0.30, and 0.50, with 10 repeats per fraction; the clean condition used one evaluation per fold. Random draws were deterministic functions of seed, fold, repeat, and fraction.
+
+Spatially clustered dropout set predefined channels to zero only in the test fold. The PhysioNet definitions were left motor strip (FC5, FC3, FC1, C5, C3, C1, CP5, CP3, CP1), midline motor strip (FCz, Cz, CPz), and right motor strip (FC2, FC4, FC6, C2, C4, C6, CP2, CP4, CP6), restricted to channels present in a dataset. These corresponded to 9/64, 3/64, and 9/64 PhysioNet channels.
+
+Reduced-montage analyses differed from dropout analyses: both training and test data were restricted to the same channels. The motor-core montage contained C3, Cz, and C4. The motor-extended montage contained FC3, FCz, FC4, C3, Cz, C4, CP3, CPz, and CP4. Cross-session analysis trained on the first available session and tested on later sessions when metadata exposed at least two usable sessions with both classes. This produced BNCI2014-001 results but no PhysioNet results.
+
+\subsection{Outcomes and statistical analysis}
+The prespecified primary outcome was ROC-AUC. Balanced accuracy was secondary. Brier score and 10-bin equal-width expected calibration error were calculated when probability estimates were available.
+
+Fold and repeat rows were first averaged within participant and condition. Population inference therefore used participants, not folds or repeats, as independent units. Each stressor was compared with the participant's clean all-channel result. We report mean paired change with a two-sided 95\% Student $t$ interval, paired $t$ test, Cohen's $d_z$, Wilcoxon signed-rank sensitivity test, and a sign test. Benjamini--Hochberg false-discovery-rate correction was applied within each test family across available conditions \cite{Benjamini_1995}. Shapiro--Wilk tests described the distribution of paired changes.
+
+For the direct PhysioNet decoder comparison, subject and condition were matched one-to-one. The estimand was ROC-AUC for CSP--LDA minus ROC-AUC for Riemann--LR; negative values favor Riemann--LR. We report the proportion of participants for whom CSP--LDA was better and exact binomial confidence intervals. Because the legacy Riemann--LR subject summary retained regional dropout fractions but not region names, left and right CSP rows sharing 9/64 dropout were averaged before matching. No missing observations were imputed.
+
+Two maximum-likelihood mixed-effects models with participant random intercepts were used as secondary analyses: a categorical condition model referenced to clean data, and a continuous dropout-fraction model restricted to clean plus random-dropout rows. Machine-readable diagnostics assessed convergence, near-zero random-intercept variance, Shapiro--Wilk residual normality, Breusch--Pagan heteroscedasticity, quadratic dose response, Ramsey RESET, and leave-one-participant-out coefficient influence. Mixed-model estimates were not treated as the sole inferential evidence when diagnostics failed.
+
+\subsection{Software, validation, and reproducibility}
+The benchmark was implemented in Python using MNE, MOABB, scikit-learn, pyRiemann, SciPy, pandas, and statsmodels. A fully pinned CPython 3.11/Linux environment is provided in \texttt{requirements-lock.txt}. Deterministic validators check schemas, metric ranges, duplicate keys, channel counts, clean-baseline pairing, expected participant counts, and fold-to-participant aggregation when fold files are available. The release manifest records SHA-256 hashes for repository artifacts while excluding its own hash. Raw EEG caches, checkpoints, development subsets, preflight runs, intermediate tables, and interactive dashboards are excluded from the journal archive.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{figure1_benchmark_pipeline.png}
+\caption{Benchmark workflow. EEG was loaded through MOABB, evaluated with CSP--LDA or Riemann--LR, exposed to clean, dropout, montage, and available cross-session conditions, and collapsed to participant-level summaries before inference. The diagram is generated by the repository reporting code.}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Results}
+\subsection{PhysioNet performance under random channel dropout}
+Both decoders degraded as random test-time channel loss increased (Table~\ref{tab:main}). For CSP--LDA, mean ROC-AUC decreased from 0.655 on clean data to 0.527 at 50\% dropout. The paired change was $-0.128$ (95\% CI $-0.153$ to $-0.102$; $d_z=-0.944$; false-discovery-rate-adjusted paired $t$-test $p=2.55\times10^{-16}$; adjusted Wilcoxon $p=4.94\times10^{-13}$). For Riemann--LR, mean ROC-AUC decreased from 0.675 to 0.554. The paired change was $-0.121$ (95\% CI $-0.141$ to $-0.101$; $d_z=-1.135$; adjusted paired $t$-test $p=8.12\times10^{-21}$; adjusted Wilcoxon $p=4.83\times10^{-15}$).
+
+\begin{table}[t]
+\centering
+\caption{Primary PhysioNet results at 50\% random channel dropout and reduced montages. Changes compare each condition with the same participant's clean all-channel result.}
+\label{tab:main}
+\begin{threeparttable}
+\small
+\begin{tabular}{llrrrr}
+\toprule
+Decoder & Condition & Mean AUC & Paired change & 95\% CI & $d_z$ \\
+\midrule
+CSP--LDA & Clean & 0.655 & --- & --- & --- \\
+CSP--LDA & 50\% dropout & 0.527 & $-0.128$ & [$-0.153$, $-0.102$] & $-0.944$ \\
+CSP--LDA & Motor core & 0.648 & $-0.007$ & [$-0.035$, 0.021] & $-0.046$ \\
+CSP--LDA & Motor extended & 0.669 & 0.014 & [$-0.013$, 0.040] & 0.097 \\
+\addlinespace
+Riemann--LR & Clean & 0.675 & --- & --- & --- \\
+Riemann--LR & 50\% dropout & 0.554 & $-0.121$ & [$-0.141$, $-0.101$] & $-1.135$ \\
+Riemann--LR & Motor core & 0.639 & $-0.036$ & [$-0.064$, $-0.009$] & $-0.248$ \\
+Riemann--LR & Motor extended & 0.677 & 0.001 & [$-0.027$, 0.030] & 0.010 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item $n=109$ for every row. AUC, receiver operating characteristic area under the curve; CI, confidence interval; $d_z$, standardized mean paired change.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+\subsection{Direct comparison of decoders}
+Riemann--LR had higher mean ROC-AUC at all four random-dropout fractions (Figure~\ref{fig:comparison}; Table~\ref{tab:comparison}). The mean paired difference was $-0.050$ at 10\% dropout, $-0.051$ at 20\%, $-0.051$ at 30\%, and $-0.027$ at 50\%. All four confidence intervals excluded zero. Adjusted paired $t$-test $p$ values ranged from $9.18\times10^{-5}$ to 0.015; adjusted Wilcoxon $p$ values ranged from $1.40\times10^{-4}$ to 0.029. Riemann--LR was better for 61--71 of 109 participants across these conditions.
+
+The clean-data difference was $-0.020$ (95\% CI $-0.042$ to 0.001). The adjusted paired $t$ test did not reject equality ($p=0.081$), whereas the adjusted Wilcoxon test did ($p=0.047$). We therefore do not claim a clean-condition difference supported by both tests. Neither reduced montage showed a clear between-decoder difference: motor core 0.009 (95\% CI $-0.002$ to 0.020) and motor extended $-0.008$ (95\% CI $-0.021$ to 0.004).
+
+For regional dropout, Riemann--LR exceeded CSP--LDA after matching by retained dropout fraction. Differences were $-0.056$ for 3/64 channels removed (95\% CI $-0.082$ to $-0.030$) and $-0.036$ for 9/64 channels removed (95\% CI $-0.058$ to $-0.015$). These are fraction-level comparisons because the Riemann--LR summary did not retain anatomical region names.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{figure2_paired_decoder_comparison.pdf}
+\caption{Subject-paired PhysioNet decoder comparison. Points are mean differences in ROC-AUC (CSP--LDA minus Riemann--LR); bars are 95\% Student $t$ confidence intervals; $n=109$ for every condition. Negative values favor Riemann--LR. The two regional comparisons are matched by the fraction of channels removed because region labels were unavailable for Riemann--LR.}
+\label{fig:comparison}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Matched PhysioNet comparison of CSP--LDA and Riemann--LR.}
+\label{tab:comparison}
+\begin{threeparttable}
+\scriptsize
+\begin{tabular}{lrrrrr}
+\toprule
+Condition & CSP mean & Riemann mean & Difference [95\% CI] & $d_z$ & CSP better \\
+\midrule
+Clean & 0.655 & 0.675 & $-0.020$ [$-0.042$, 0.001] & $-0.180$ & 39/109 \\
+Dropout 10\% & 0.590 & 0.640 & $-0.050$ [$-0.072$, $-0.028$] & $-0.427$ & 38/109 \\
+Dropout 20\% & 0.553 & 0.604 & $-0.051$ [$-0.075$, $-0.027$] & $-0.399$ & 42/109 \\
+Dropout 30\% & 0.543 & 0.594 & $-0.051$ [$-0.074$, $-0.028$] & $-0.427$ & 39/109 \\
+Dropout 50\% & 0.527 & 0.554 & $-0.027$ [$-0.048$, $-0.007$] & $-0.251$ & 48/109 \\
+Motor core & 0.648 & 0.639 & 0.009 [$-0.002$, 0.020] & 0.159 & 53/109 \\
+Motor extended & 0.669 & 0.677 & $-0.008$ [$-0.021$, 0.004] & $-0.127$ & 53/109 \\
+Regional 3/64 & 0.607 & 0.663 & $-0.056$ [$-0.082$, $-0.030$] & $-0.411$ & 35/109 \\
+Regional 9/64 & 0.595 & 0.632 & $-0.036$ [$-0.058$, $-0.015$] & $-0.317$ & 40/109 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Difference is CSP--LDA minus Riemann--LR. ``CSP better'' counts strict positive differences; ties are excluded from this count but retained in the denominator shown.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+\subsection{Reduced montages}
+The 9-channel motor-extended montage preserved PhysioNet performance for both decoders. CSP--LDA changed by 0.014 (95\% CI $-0.013$ to 0.040; adjusted paired $t$-test $p=0.333$), and Riemann--LR changed by 0.001 (95\% CI $-0.027$ to 0.030; $p=0.947$). The 3-channel motor-core montage also showed no clear CSP--LDA change ($-0.007$, 95\% CI $-0.035$ to 0.021; $p=0.635$), but Riemann--LR decreased by $-0.036$ (95\% CI $-0.064$ to $-0.009$; $p=0.012$).
+
+\subsection{BNCI2014-001 sensitivity analysis and cross-session transfer}
+The smaller BNCI2014-001 cohort showed larger losses at 50\% random dropout. CSP--LDA decreased from 0.852 to 0.616 (paired change $-0.236$, 95\% CI $-0.293$ to $-0.179$; $n=9$), and Riemann--LR decreased from 0.878 to 0.721 ($-0.157$, 95\% CI $-0.200$ to $-0.113$). Cross-session estimates did not show clear ROC-AUC changes: 0.001 for CSP--LDA (95\% CI $-0.021$ to 0.023) and $-0.007$ for Riemann--LR (95\% CI $-0.022$ to 0.007). The cohort is too small for strong population claims, and cross-session results were unavailable in the larger PhysioNet cohort.
+
+\subsection{Model diagnostics}
+Both mixed-effects models converged, and leave-one-participant-out influence checks did not identify a coefficient change above the prespecified relative threshold. Residual diagnostics rejected normality and constant variance for both decoder families. The subject-demeaned quadratic and Ramsey RESET tests also rejected a strictly linear random-dropout dose response. The continuous mixed-model slope is therefore a descriptive summary across tested fractions rather than evidence that degradation is linear. Participant-paired estimates and Wilcoxon sensitivity analyses are the main inferential results.
+
+\section{Discussion}
+This benchmark produced three findings relevant to evaluation of motor-imagery decoders. First, large test-time channel loss substantially reduced discrimination for both pipelines. At 50\% dropout, mean PhysioNet ROC-AUC fell by about 0.12 for each decoder. Second, Riemann--LR retained higher ROC-AUC than CSP--LDA under every tested level of random dropout and under the two harmonized regional-dropout comparisons. The standardized between-decoder effects were small to moderate ($|d_z|=0.25$--$0.43$), so the result concerns relative robustness rather than immunity to channel loss. Third, the 9-channel motor-centered montage retained clean-data performance for both methods, suggesting that planned sensor reduction differs materially from unplanned channel failure.
+
+The distinction between dropout and reduced montage is methodological. Dropout models a decoder trained on intact spatial information and then evaluated after sensor loss. Zeroed channels do not recreate every physical failure mode, but they provide a controlled test of missing signal input. Reduced-montage models are retrained on the smaller channel set, allowing their spatial representation to adapt. The absence of degradation for the 9-channel montage therefore does not imply that nine arbitrary failed channels are harmless. It supports prospective retraining for a stable, motor-centered layout.
+
+Riemann--LR's advantage under perturbation is consistent with a covariance representation retaining useful distributed structure after some channels are removed. This is an interpretation, not a mechanism established by the present observational benchmark. The clean-condition evidence was mixed between the paired $t$ and Wilcoxon tests, and reduced-montage differences were not clear. Decoder selection should therefore consider the intended failure model instead of relying on one intact-data ranking.
+
+The analysis addresses common statistical weaknesses in repeated benchmark outputs. Folds and dropout repeats are not treated as independent participants. Inference is performed after aggregation to one row per participant and condition. Parametric estimates are accompanied by signed-rank sensitivity tests and false-discovery-rate correction. Diagnostics show why this matters: residual normality, homoscedasticity, and linear dose-response assumptions did not hold. Reporting only the linear mixed-model slope would overstate the adequacy of that functional form.
+
+\subsection{Limitations}
+The benchmark has six main limitations. First, the full PhysioNet Riemann--LR fold-level file was unavailable. Its 109-participant summary passed schema, range, duplicate-key, pairing, and cohort-size checks, but fold-to-participant aggregation could not be independently revalidated. No fold data were reconstructed. Second, the legacy Riemann--LR summary did not preserve named regional conditions. Consequently, separate left- and right-motor-strip between-decoder effects cannot be recovered; only 3/64 and averaged 9/64 comparisons are defensible. Third, PhysioNet did not yield usable cross-session rows, so cross-session evidence is limited to nine BNCI participants. Fourth, zero-valued channels approximate signal loss but do not model impedance noise, bridging, transient artifacts, or adaptive online recalibration. Fifth, two classical pipelines and two public datasets do not cover deep networks, regression-based control, asynchronous operation, or users with motor impairment. Sixth, the benchmark assesses offline discrimination and cannot establish clinical benefit, online controllability, safety, or causal effects of an intervention.
+
+Future work should preserve fold-level and anatomical-condition provenance for every pipeline, add prospective corruption models beyond zeroing, and evaluate recalibration strategies under predeclared stressor schedules. Larger multi-session cohorts are needed for cross-session inference. Extension to continuous control should use outcomes linked to command latency, trajectory error, and task completion rather than classification metrics alone.
+
+\section{Conclusions}
+Random and spatially clustered channel loss exposed performance differences that were not resolved by clean-data evaluation alone. Riemann--LR had higher ROC-AUC than CSP--LDA under random and harmonized regional dropout in 109 PhysioNet participants, although both methods degraded materially. A predefined 9-channel motor montage retained clean-data performance when each decoder was retrained on that montage. Participant-level aggregation, paired sensitivity analyses, explicit provenance, and assumption diagnostics should accompany robustness claims in BCI methods studies.
+
+\section*{Data and code availability}
+The analysis uses public datasets accessed through MOABB and MNE; raw EEG is not redistributed. The manuscript is linked to software release version 0.2.0. The repository (\url{https://github.com/ZyntZ/BCI-Prosthesis-Robustness-Benchmark}) contains benchmark code, pinned dependencies, participant-level results, the available CSP--LDA fold-level results, statistical tables, validation outputs, and release manifests. A permanent repository DOI has not yet been assigned and should be added to the accepted manuscript and software citation after archival release.
+
+\section*{Ethics statement}
+This study is a secondary analysis of publicly accessible, de-identified datasets and recruited no new participants. Ethical approval and consent procedures for data acquisition are governed by the original dataset records.
+
+\FloatBarrier
+\begin{thebibliography}{99}
+\bibitem{Goldberger_2000} Goldberger AL, Amaral LAN, Glass L, et al. PhysioBank, PhysioToolkit, and PhysioNet: components of a new research resource for complex physiologic signals. \textit{Circulation}. 2000;101:e215--e220. \href{https://doi.org/10.1161/01.CIR.101.23.e215}{doi:10.1161/01.CIR.101.23.e215}.
+\bibitem{Schalk_2004} Schalk G, McFarland DJ, Hinterberger T, Birbaumer N, Wolpaw JR. BCI2000: a general-purpose brain--computer interface system. \textit{IEEE Trans Biomed Eng}. 2004;51:1034--1043. \href{https://doi.org/10.1109/TBME.2004.827072}{doi:10.1109/TBME.2004.827072}.
+\bibitem{Shuqfa_2024} Shuqfa Z, Lakas A, Belkacem AN. Increasing accessibility to a large brain--computer interface dataset: curation of PhysioNet EEG Motor Movement/Imagery dataset for decoding and classification. \textit{Data Brief}. 2024;53:110181. \href{https://doi.org/10.1016/j.dib.2024.110181}{doi:10.1016/j.dib.2024.110181}.
+\bibitem{Tangermann_2012} Tangermann M, M\"uller KR, Aertsen A, et al. Review of the BCI Competition IV. \textit{Front Neurosci}. 2012;6:55. \href{https://doi.org/10.3389/fnins.2012.00055}{doi:10.3389/fnins.2012.00055}.
+\bibitem{Jayaram_2018} Jayaram V, Barachant A. MOABB: trustworthy algorithm benchmarking for BCIs. \textit{J Neural Eng}. 2018;15:066011. \href{https://doi.org/10.1088/1741-2552/aadea0}{doi:10.1088/1741-2552/aadea0}.
+\bibitem{Ramoser_2000} Ramoser H, Muller-Gerking J, Pfurtscheller G. Optimal spatial filtering of single trial EEG during imagined hand movement. \textit{IEEE Trans Rehabil Eng}. 2000;8:441--446. \href{https://doi.org/10.1109/86.895946}{doi:10.1109/86.895946}.
+\bibitem{Barachant_2012} Barachant A, Bonnet S, Congedo M, Jutten C. Multiclass brain--computer interface classification by Riemannian geometry. \textit{IEEE Trans Biomed Eng}. 2012;59:920--928. \href{https://doi.org/10.1109/TBME.2011.2172210}{doi:10.1109/TBME.2011.2172210}.
+\bibitem{Benjamini_1995} Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and powerful approach to multiple testing. \textit{J R Stat Soc Series B}. 1995;57:289--300. \href{https://doi.org/10.1111/j.2517-6161.1995.tb02031.x}{doi:10.1111/j.2517-6161.1995.tb02031.x}.
+\end{thebibliography}
+\end{document}

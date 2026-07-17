@@ -48,6 +48,9 @@ REQUIRED_PROJECT_FILES = [
     "requirements.txt",
     "requirements-lock.txt",
     "pyproject.toml",
+    "manuscript/manuscript.tex",
+    "manuscript/manuscript.pdf",
+    "manuscript/highlights.txt",
 ]
 REQUIRED_REPORT_SUFFIXES = [
     "validation_checks.csv",
