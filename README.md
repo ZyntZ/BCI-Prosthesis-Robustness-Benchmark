@@ -156,7 +156,7 @@ make postprocess-full PREFIX=PhysionetMI_PhysionetMI_all_riemann_lr
 make postprocess-full PREFIX=PhysionetMI_PhysionetMI_all_csp_lda
 ```
 
-This does not reload EEG or rerun model fitting. Existing `*_results.csv` files are the source. Rebuilding summaries preserves named region-dropout and cross-session condition identifiers.
+This does not reload EEG or rerun model fitting. The command uses the best available source in this order: the full `*_results.csv`; all 109 subject checkpoints; or an existing `*_subject_summary.csv` containing 109 unique subjects. The last mode can generate statistical and HTML reports but cannot repeat fold-level validation, because the fold rows are unavailable. Rebuilding from fold results or checkpoints preserves named region-dropout and cross-session condition identifiers.
 
 ## Post-processing
 

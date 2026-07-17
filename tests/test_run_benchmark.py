@@ -58,3 +58,113 @@ def test_refresh_summaries_preserves_named_regions(tmp_path):
     summary = pd.read_csv(tmp_path / f"{prefix}_subject_summary.csv")
     assert result["n_subject_condition_rows"] == 2
     assert set(summary["region"]) == {"left_motor_strip", "right_motor_strip"}
+
+
+def test_refresh_summaries_recovers_missing_results_from_complete_checkpoints(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "refresh_benchmark_summaries_recovery_test", ROOT / "scripts" / "refresh_benchmark_summaries.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    import pandas as pd
+
+    prefix = "PhysionetMI_PhysionetMI_all_riemann_lr"
+    checkpoint_dir = tmp_path / "checkpoints"
+    checkpoint_dir.mkdir()
+    for subject in [1, 2]:
+        frame = pd.DataFrame([{
+            "dataset": "PhysionetMotorImagery", "subject": subject, "pipeline": "riemann_lr",
+            "stressor": "clean", "montage": "all_channels", "dropout_fraction": 0.0,
+            "fold": 1, "repeat": 0, "roc_auc": 0.7, "balanced_accuracy": 0.6,
+            "brier_score": 0.2, "ece": 0.1, "n_channels": 64, "n_dropped_channels": 0,
+        }])
+        frame.to_csv(checkpoint_dir / f"PhysionetMI_riemann_lr_subject-{subject:03d}_robustness.csv", index=False)
+
+    result = module.refresh_summaries(
+        tmp_path, prefix, recover_from_checkpoints=True, expected_subjects=2
+    )
+    assert result["recovered_from_checkpoints"] is True
+    assert result["n_checkpoint_files"] == 2
+    assert result["n_subjects"] == 2
+    assert (tmp_path / f"{prefix}_results.csv").exists()
+
+
+def test_checkpoint_recovery_refuses_incomplete_subject_set(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "refresh_benchmark_summaries_incomplete_test", ROOT / "scripts" / "refresh_benchmark_summaries.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    import pandas as pd
+    import pytest
+
+    checkpoint_dir = tmp_path / "checkpoints"
+    checkpoint_dir.mkdir()
+    pd.DataFrame([{
+        "dataset": "PhysionetMotorImagery", "subject": 1, "pipeline": "riemann_lr",
+        "stressor": "clean", "montage": "all_channels", "dropout_fraction": 0.0,
+        "fold": 1, "repeat": 0, "roc_auc": 0.7, "balanced_accuracy": 0.6,
+        "n_channels": 64, "n_dropped_channels": 0,
+    }]).to_csv(checkpoint_dir / "PhysionetMI_riemann_lr_subject-001_robustness.csv", index=False)
+    with pytest.raises(RuntimeError, match="Found 1 unique subject checkpoints, expected 2"):
+        module.refresh_summaries(
+            tmp_path,
+            "PhysionetMI_PhysionetMI_all_riemann_lr",
+            recover_from_checkpoints=True,
+            expected_subjects=2,
+        )
+
+
+def test_refresh_uses_complete_existing_subject_summary_when_raw_and_checkpoints_absent(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "refresh_existing_summary_test", ROOT / "scripts" / "refresh_benchmark_summaries.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    import pandas as pd
+
+    prefix = "PhysionetMI_PhysionetMI_all_riemann_lr"
+    rows = []
+    for subject in [1, 2]:
+        rows.append({
+            "dataset": "PhysionetMotorImagery", "subject": subject, "pipeline": "riemann_lr",
+            "stressor": "clean", "montage": "all_channels", "dropout_fraction": 0.0,
+            "roc_auc": 0.7, "balanced_accuracy": 0.6, "brier_score": 0.2,
+            "ece": 0.1, "n_channels": 64, "n_dropped_channels": 0,
+        })
+    pd.DataFrame(rows).to_csv(tmp_path / f"{prefix}_subject_summary.csv", index=False)
+    result = module.refresh_summaries(
+        tmp_path, prefix, recover_from_checkpoints=True,
+        allow_existing_subject_summary=True, expected_subjects=2,
+    )
+    assert result["mode"] == "existing_subject_summary"
+    assert result["n_subjects"] == 2
+    assert result["n_fold_rows"] is None
+    assert (tmp_path / f"{prefix}_population_summary.csv").exists()
+
+
+def test_existing_subject_summary_fallback_refuses_incomplete_cohort(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "refresh_existing_summary_incomplete_test", ROOT / "scripts" / "refresh_benchmark_summaries.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    import pandas as pd
+    import pytest
+
+    prefix = "PhysionetMI_PhysionetMI_all_riemann_lr"
+    pd.DataFrame([{
+        "dataset": "PhysionetMotorImagery", "subject": 1, "pipeline": "riemann_lr",
+        "stressor": "clean", "montage": "all_channels", "dropout_fraction": 0.0,
+        "roc_auc": 0.7, "balanced_accuracy": 0.6, "n_channels": 64,
+        "n_dropped_channels": 0,
+    }]).to_csv(tmp_path / f"{prefix}_subject_summary.csv", index=False)
+    with pytest.raises(RuntimeError, match="contains 1 unique subjects, expected 2"):
+        module.refresh_summaries(
+            tmp_path, prefix, recover_from_checkpoints=True,
+            allow_existing_subject_summary=True, expected_subjects=2,
+        )
