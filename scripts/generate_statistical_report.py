@@ -24,6 +24,12 @@ CALIBRATION_METRICS = ["brier_score", "ece"]
 BENEFIT_METRICS = {"roc_auc", "balanced_accuracy"}
 COST_METRICS = {"brier_score", "ece"}
 KEY_COLS = ["dataset", "subject", "pipeline", "stressor", "montage", "dropout_fraction"]
+OPTIONAL_KEY_COLS = ["region", "session_train", "session_test"]
+
+
+def effective_key(df: pd.DataFrame) -> list[str]:
+    """Condition key including identifiers present in newer benchmark outputs."""
+    return KEY_COLS + [c for c in OPTIONAL_KEY_COLS if c in df.columns and df[c].notna().any()]
 
 
 def require_columns(df: pd.DataFrame, columns: set[str], source: Path | str = "dataframe") -> None:
@@ -41,8 +47,9 @@ def load_subject_summary(results_dir: Path, prefix: str) -> pd.DataFrame:
     for metric in METRICS:
         if metric not in df.columns:
             df[metric] = np.nan
-    if df.duplicated(KEY_COLS).any():
-        dup = df.loc[df.duplicated(KEY_COLS, keep=False), KEY_COLS].head().to_dict("records")
+    key = effective_key(df)
+    if df.duplicated(key).any():
+        dup = df.loc[df.duplicated(key, keep=False), key].head().to_dict("records")
         raise ValueError(f"Subject summary contains duplicate subject-condition rows; examples: {dup}")
     return df
 
@@ -53,6 +60,9 @@ def condition_label(row: pd.Series) -> str:
     if row["stressor"] == "reduced_montage":
         return f"reduced_montage_{row['montage']}"
     frac = float(row["dropout_fraction"])
+    if row["stressor"] == "region_dropout" and "region" in row.index and pd.notna(row["region"]):
+        region = str(row["region"]).replace(" ", "_")
+        return f"region_dropout_{region}_{frac:g}"
     return f"{row['stressor']}_{frac:g}"
 
 
@@ -302,7 +312,7 @@ def slope_population_summary(slopes: pd.DataFrame) -> pd.DataFrame:
 def methods_audit(subj: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     numeric_metrics = [m for m in METRICS if m in subj.columns]
-    key_dups = int(subj.duplicated(KEY_COLS).sum())
+    key_dups = int(subj.duplicated(effective_key(subj)).sum())
     rows.append({"check": "n_rows_subject_summary", "value": int(len(subj)), "status": "info"})
     rows.append({"check": "n_subjects", "value": int(subj["subject"].nunique()), "status": "info"})
     rows.append({"check": "n_conditions", "value": int(add_condition(subj)["condition"].nunique()), "status": "info"})

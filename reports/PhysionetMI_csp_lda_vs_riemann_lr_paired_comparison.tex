@@ -1,0 +1,19 @@
+\begin{table}
+\caption{Subject-paired ROC-AUC comparison of CSP-LDA and Riemann-LR.}
+\label{tab:pipeline-comparison}
+\begin{tabular}{lrlllllll}
+\toprule
+condition & n\_subjects & mean\_paired\_difference\_csp\_minus\_riemann & ci95\_low & ci95\_high & cohens\_dz & paired\_t\_p\_value\_bh\_fdr & wilcoxon\_p\_value\_bh\_fdr & proportion\_csp\_better \\
+\midrule
+clean & 109 & -0.020 & -0.042 & 0.001 & -0.180 & 0.081 & 0.047 & 0.358 \\
+dropout\_0.1 & 109 & -0.050 & -0.072 & -0.028 & -0.427 & 0.000 & 0.000 & 0.349 \\
+dropout\_0.2 & 109 & -0.051 & -0.075 & -0.027 & -0.399 & 0.000 & 0.000 & 0.385 \\
+dropout\_0.3 & 109 & -0.051 & -0.074 & -0.028 & -0.427 & 0.000 & 0.000 & 0.358 \\
+dropout\_0.5 & 109 & -0.027 & -0.048 & -0.007 & -0.251 & 0.015 & 0.029 & 0.440 \\
+motor\_core & 109 & 0.009 & -0.002 & 0.020 & 0.159 & 0.113 & 0.101 & 0.486 \\
+motor\_extended & 109 & -0.008 & -0.021 & 0.004 & -0.127 & 0.189 & 0.308 & 0.486 \\
+region\_fraction\_0.046875 & 109 & -0.056 & -0.082 & -0.030 & -0.411 & 0.000 & 0.000 & 0.321 \\
+region\_fraction\_0.140625 & 109 & -0.036 & -0.058 & -0.015 & -0.317 & 0.002 & 0.003 & 0.367 \\
+\bottomrule
+\end{tabular}
+\end{table}

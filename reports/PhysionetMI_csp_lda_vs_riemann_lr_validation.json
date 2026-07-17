@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "n_conditions": 9,
+  "subjects_per_condition": {
+    "clean": 109,
+    "dropout_0.1": 109,
+    "dropout_0.2": 109,
+    "dropout_0.3": 109,
+    "dropout_0.5": 109,
+    "motor_core": 109,
+    "motor_extended": 109,
+    "region_fraction_0.046875": 109,
+    "region_fraction_0.140625": 109
+  },
+  "harmonization_notes": [
+    "Named region rows sharing a dropout fraction were averaged to match legacy unlabeled rows."
+  ],
+  "limitation": "The Riemann-LR summary has no named region column. Left and right motor-strip CSP rows share the same dropout fraction and were averaged for a valid like-for-like legacy fraction comparison. Separate left and right inter-model effects cannot be recovered without Riemann-LR fold-level or region-preserving subject data."
+}

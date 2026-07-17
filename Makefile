@@ -12,7 +12,10 @@ MAX_CONSECUTIVE_FAILURES ?= 5
 SKIP_FAILED_FLAG = $(if $(filter 1 true yes,$(SKIP_FAILED)),--skip-failed,)
 
 
-.PHONY: physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
+.PHONY: compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
+
+install-lock:
+	$(PYTHON) -m pip install -r requirements-lock.txt
 
 install-dev:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -107,6 +110,7 @@ postprocess-full: ensure-reports
 	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 	$(PYTHON) scripts/final_statistics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
+	$(PYTHON) scripts/mixed_model_diagnostics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
 
 postprocess-physionet-full-available: ensure-reports
 	@set -e; processed=0; \
@@ -173,11 +177,19 @@ statistical-reports:
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr
+	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_csp_lda
+
+mixed-model-diagnostics:
+	$(PYTHON) scripts/mixed_model_diagnostics.py --results-dir $(RESULTS_DIR) --prefix PhysionetMI_PhysionetMI_all_csp_lda
+	$(PYTHON) scripts/mixed_model_diagnostics.py --results-dir $(RESULTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr
+
+compare-physionet-pipelines:
+	$(PYTHON) scripts/compare_physionet_pipelines.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR)
 
 methods-figures:
 	$(PYTHON) scripts/generate_methods_figures.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr --metric roc_auc
 
-release-manifest: validate-results statistical-reports methods-figures
+release-manifest: validate-results statistical-reports mixed-model-diagnostics compare-physionet-pipelines methods-figures
 	$(PYTHON) scripts/build_release_manifest.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --output $(REPORTS_DIR)/release_manifest.json
 
 submission-readiness: release-manifest
@@ -187,6 +199,6 @@ archive-audit: submission-readiness
 	$(PYTHON) scripts/build_release_archive.py --audit-only
 
 release-archive: archive-audit
-	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_local_env_safe_clean.zip
+	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_csp_riemann_publication_update.zip
 
 publication-check: compile-check test submission-readiness archive-audit

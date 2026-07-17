@@ -103,6 +103,7 @@ def test_subject_summary_preserves_named_region_conditions():
 
 @pytest.mark.filterwarnings("ignore:.*not fully.*:RuntimeWarning")
 def test_csp_lda_handles_three_channel_montage_and_high_dropout():
+    pytest.importorskip("mne", reason="MNE is required for CSP integration tests")
     rng = np.random.default_rng(7)
     X = rng.normal(size=(40, 3, 96))
     y = np.array([0] * 20 + [1] * 20)
@@ -119,6 +120,7 @@ def test_csp_lda_handles_three_channel_montage_and_high_dropout():
 
 @pytest.mark.filterwarnings("ignore:.*not fully.*:RuntimeWarning")
 def test_csp_reduced_montages_clamp_components_to_channel_count():
+    pytest.importorskip("mne", reason="MNE is required for CSP integration tests")
     rng = np.random.default_rng(11)
     X = rng.normal(size=(40, 5, 96))
     y = np.array([0] * 20 + [1] * 20)

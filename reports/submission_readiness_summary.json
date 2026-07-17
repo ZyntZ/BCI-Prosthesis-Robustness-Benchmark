@@ -1,13 +1,14 @@
 {
-  "generated_at_utc": "2026-07-17T15:18:42.526793+00:00",
+  "generated_at_utc": "2026-07-17T16:20:44.898166+00:00",
   "prefixes": [
     "PhysionetMI_dev10",
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
-    "PhysionetMI_PhysionetMI_all_riemann_lr"
+    "PhysionetMI_PhysionetMI_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_csp_lda"
   ],
   "ready": true,
-  "n_checks": 73,
+  "n_checks": 88,
   "n_failed_errors": 0,
   "n_failed_warnings": 1,
   "note": "Checks are derived from repository files only; no benchmark observations were generated."

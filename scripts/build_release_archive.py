@@ -30,7 +30,23 @@ EXCLUDE_DIRS = {
     "mne_data",
     "data",
 }
-EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".zip"}
+EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".zip", ".html"}
+EXCLUDE_NAME_TOKENS = [
+    "PhysionetMI_dev10", "PhysionetMI_Physionet_csp_preflight",
+    "_next_", "paired_stats_next", "failure_rates_next", "next_summary",
+]
+EXCLUDE_EXACT_NAMES = {"run_all.sh", "MANUSCRIPT_PLACEHOLDER.md"}
+
+def is_journal_release_excluded(path: Path, root: Path) -> bool:
+    rel = str(path.relative_to(root))
+    name = path.name
+    if name in EXCLUDE_EXACT_NAMES or any(token in rel for token in EXCLUDE_NAME_TOKENS):
+        return True
+    if name.endswith("_subject_wide.csv"):
+        return True
+    if rel.startswith("reports/BNCI2014-001_") and "_methods_" in name:
+        return True
+    return False
 DISALLOWED_TOKENS = ["assistant", "for_me", "for-me", "для_меня", "для-меня", "ииш", "ai_generated", "ai-generated"]
 REQUIRED_FILES = [
     "LICENSE",
@@ -38,7 +54,6 @@ REQUIRED_FILES = [
     "README.md",
     "REPRODUCIBILITY.md",
     "STATISTICAL_REPORTING.md",
-    "MANUSCRIPT_PLACEHOLDER.md",
     "SUBMISSION_READINESS.md",
     ".github/workflows/ci.yml",
     "scripts/validate_results.py",
@@ -72,6 +87,8 @@ def is_excluded_path(path: Path, root: Path) -> bool:
 
 def should_include(path: Path, root: Path) -> bool:
     if is_excluded_path(path, root):
+        return False
+    if is_journal_release_excluded(path, root):
         return False
     if path.suffix in EXCLUDE_SUFFIXES:
         return False
@@ -137,7 +154,7 @@ def build_archive(root: Path, output: Path, top_level_name: str | None = None) -
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", type=Path, default=Path("."))
-    ap.add_argument("--output", type=Path, default=Path("dist/JNM_local_env_safe_clean.zip"))
+    ap.add_argument("--output", type=Path, default=Path("dist/JNM_csp_riemann_publication_update.zip"))
     ap.add_argument("--audit-only", action="store_true")
     args = ap.parse_args()
     root = args.root.resolve()

@@ -1,4 +1,14 @@
-# Reproducibility guide
+# Reproducibility
+
+## Canonical environment
+
+```bash
+python -m pip install -r requirements-lock.txt
+python -m pip install -e . --no-deps
+```
+
+The lock is resolved for CPython 3.11 on Linux, matching continuous integration.
+ guide
 
 ## Environment
 

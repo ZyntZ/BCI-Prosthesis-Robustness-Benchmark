@@ -7,11 +7,14 @@ datasets:
   paradigm: LeftRightImagery
   note: PhysioNet EEG Motor Movement/Imagery, 109 volunteers; open access through
     PhysioNet/MOABB.
+- name: BNCI2014-001
+  paradigm: LeftRightImagery
+  note: BNCI 2014-001, 9 participants; open access through MOABB.
 pipelines:
 - name: csp_lda
   description: Classical Common Spatial Patterns + Linear Discriminant Analysis baseline.
   csp_components: 6
-- name: tangent_space_lr
+- name: riemann_lr
   description: Covariance features on Riemannian tangent space + logistic regression,
     if pyriemann is available.
 stressors:

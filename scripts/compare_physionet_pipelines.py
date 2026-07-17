@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Subject-paired comparison of full PhysioNet decoder outputs.
+
+Only observed subject-level summaries are used. Legacy region-dropout rows without
+region labels are harmonized by dropout fraction; no missing region is imputed.
+"""
+from __future__ import annotations
+import argparse, json
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from scipy import stats
+from scipy.stats import beta
+from statsmodels.stats.multitest import multipletests
+
+
+def condition_frame(df: pd.DataFrame) -> pd.DataFrame:
+    out=df.copy()
+    def label(r):
+        s=str(r.stressor); f=float(r.dropout_fraction)
+        if s=='clean': return 'clean'
+        if s=='channel_dropout': return f'dropout_{f:g}'
+        if s=='reduced_montage': return str(r.montage)
+        if s=='region_dropout':
+            if 'region' in r.index and pd.notna(r.get('region')):
+                return f"region_{r.region}"
+            return f'region_fraction_{f:g}'
+        return f'{s}_{f:g}'
+    out['condition']=out.apply(label,axis=1)
+    return out
+
+
+def harmonize_region(df: pd.DataFrame) -> tuple[pd.DataFrame,list[str]]:
+    """Match legacy unlabeled region rows without inventing anatomical identity."""
+    notes=[]; out=[]
+    for _,g in df.groupby(['subject','pipeline'],sort=False):
+        non=g[g.stressor.ne('region_dropout')].copy(); out.append(non)
+        reg=g[g.stressor.eq('region_dropout')].copy()
+        if reg.empty: continue
+        # If a decoder has named rows, collapse names sharing a channel fraction.
+        # This matches the only information retained by the legacy comparator.
+        if 'region' in reg.columns and reg.region.notna().any():
+            metrics=[c for c in ['roc_auc','balanced_accuracy','brier_score','ece','n_channels','n_dropped_channels'] if c in reg]
+            keys=['dataset','subject','pipeline','stressor','montage','dropout_fraction']
+            reg=reg.groupby(keys,dropna=False,as_index=False)[metrics].mean()
+            notes.append('Named region rows sharing a dropout fraction were averaged to match legacy unlabeled rows.')
+        out.append(reg)
+    return pd.concat(out,ignore_index=True), sorted(set(notes))
+
+
+def proportion_ci(k,n,alpha=.05):
+    if not n: return np.nan,np.nan
+    return (0.0 if k==0 else float(beta.ppf(alpha/2,k,n-k+1)),
+            1.0 if k==n else float(beta.ppf(1-alpha/2,k+1,n-k)))
+
+
+def compare(csp,riem):
+    csp,notes=harmonize_region(csp); riem,rnotes=harmonize_region(riem); notes+=rnotes
+    csp=condition_frame(csp); riem=condition_frame(riem)
+    key=['subject','condition']
+    if csp.duplicated(key).any() or riem.duplicated(key).any(): raise ValueError('Non-unique subject-condition rows after harmonization')
+    m=csp[key+['roc_auc']].merge(riem[key+['roc_auc']],on=key,suffixes=('_csp','_riemann'),validate='one_to_one')
+    rows=[]
+    for cond,g in m.groupby('condition',sort=True):
+        g=g.dropna(); d=g.roc_auc_csp-g.roc_auc_riemann; n=len(d)
+        if n<2: continue
+        mean=float(d.mean()); sd=float(d.std(ddof=1)); se=sd/np.sqrt(n)
+        ci=stats.t.interval(.95,n-1,loc=mean,scale=se)
+        tt=stats.ttest_rel(g.roc_auc_csp,g.roc_auc_riemann)
+        try: w=stats.wilcoxon(d,zero_method='wilcox'); ws,wp=float(w.statistic),float(w.pvalue)
+        except ValueError: ws=wp=np.nan
+        k=int((d>0).sum()); ties=int((d==0).sum()); lo,hi=proportion_ci(k,n)
+        rows.append(dict(condition=cond,n_subjects=n,mean_auc_csp=float(g.roc_auc_csp.mean()),mean_auc_riemann=float(g.roc_auc_riemann.mean()),mean_paired_difference_csp_minus_riemann=mean,ci95_low=float(ci[0]),ci95_high=float(ci[1]),paired_t_statistic=float(tt.statistic),paired_t_p_value=float(tt.pvalue),wilcoxon_statistic=ws,wilcoxon_p_value=wp,cohens_dz=mean/sd if sd>0 else np.nan,n_csp_better=k,n_riemann_better=int((d<0).sum()),n_ties=ties,proportion_csp_better=k/n,proportion_csp_better_ci95_low=lo,proportion_csp_better_ci95_high=hi,shapiro_p_value=float(stats.shapiro(d).pvalue) if 3<=n<=5000 else np.nan))
+    out=pd.DataFrame(rows)
+    for p in ['paired_t_p_value','wilcoxon_p_value']:
+        mask=out[p].notna(); out.loc[mask,p+'_bh_fdr']=multipletests(out.loc[mask,p],method='fdr_bh')[1]
+    return out,m,sorted(set(notes))
+
+
+def tex_table(df):
+    cols=['condition','n_subjects','mean_paired_difference_csp_minus_riemann','ci95_low','ci95_high','cohens_dz','paired_t_p_value_bh_fdr','wilcoxon_p_value_bh_fdr','proportion_csp_better']
+    x=df[cols].copy()
+    for c in cols[2:]: x[c]=x[c].map(lambda v:'NA' if pd.isna(v) else f'{v:.3f}')
+    return x.to_latex(index=False,escape=True,caption='Subject-paired ROC-AUC comparison of CSP-LDA and Riemann-LR.',label='tab:pipeline-comparison')
+
+
+def main():
+    ap=argparse.ArgumentParser(); ap.add_argument('--results-dir',type=Path,default=Path('results')); ap.add_argument('--reports-dir',type=Path,default=Path('reports')); ap.add_argument('--csp-prefix',default='PhysionetMI_PhysionetMI_all_csp_lda'); ap.add_argument('--riemann-prefix',default='PhysionetMI_PhysionetMI_all_riemann_lr'); ap.add_argument('--output-prefix',default='PhysionetMI_csp_lda_vs_riemann_lr'); a=ap.parse_args()
+    c=pd.read_csv(a.results_dir/f'{a.csp_prefix}_subject_summary.csv'); r=pd.read_csv(a.results_dir/f'{a.riemann_prefix}_subject_summary.csv')
+    table,pairs,notes=compare(c,r); a.reports_dir.mkdir(parents=True,exist_ok=True)
+    csv=a.results_dir/f'{a.output_prefix}_paired_comparison.csv'; paircsv=a.results_dir/f'{a.output_prefix}_paired_subject_differences.csv'; tex=a.reports_dir/f'{a.output_prefix}_paired_comparison.tex'; md=a.reports_dir/f'{a.output_prefix}_paired_comparison.md'; val=a.reports_dir/f'{a.output_prefix}_validation.json'; manifest=a.results_dir/f'{a.output_prefix}_manifest.json'
+    table.to_csv(csv,index=False); pairs.assign(paired_difference_csp_minus_riemann=pairs.roc_auc_csp-pairs.roc_auc_riemann).to_csv(paircsv,index=False); tex.write_text(tex_table(table),encoding='utf-8')
+    limitation=('The Riemann-LR summary has no named region column. Left and right motor-strip CSP rows share the same dropout fraction and were averaged for a valid like-for-like legacy fraction comparison. Separate left and right inter-model effects cannot be recovered without Riemann-LR fold-level or region-preserving subject data.')
+    md.write_text('# Paired decoder comparison\n\nPositive differences favor CSP-LDA. Tests are subject-paired; Benjamini-Hochberg correction is across compared conditions.\n\n'+table.to_markdown(index=False)+'\n\n## Limitation\n\n'+limitation+'\n',encoding='utf-8')
+    validation={'passed':bool(len(table)==9 and table.n_subjects.eq(109).all()),'n_conditions':int(len(table)),'subjects_per_condition':{x.condition:int(x.n_subjects) for x in table.itertuples()},'harmonization_notes':notes,'limitation':limitation}
+    val.write_text(json.dumps(validation,indent=2)+'\n'); manifest.write_text(json.dumps({'sources':[str(a.results_dir/f'{a.csp_prefix}_subject_summary.csv'),str(a.results_dir/f'{a.riemann_prefix}_subject_summary.csv')],'outputs':[str(csv),str(paircsv),str(tex),str(md),str(val)],'no_imputation':True,'validation_passed':validation['passed']},indent=2)+'\n')
+    print(json.dumps(validation,indent=2));
+    if not validation['passed']: raise SystemExit(1)
+if __name__=='__main__': main()

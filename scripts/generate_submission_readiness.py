@@ -20,17 +20,20 @@ DEFAULT_PREFIXES = [
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_csp_lda",
 ]
 FULL_RUN_PREFIXES = [
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_csp_lda",
 ]
 EXPECTED_SUBJECT_COUNTS = {
     "PhysionetMI_dev10": 10,
     "BNCI2014-001_BNCI2014_001_all_csp_lda": 9,
     "BNCI2014-001_BNCI2014_001_all_riemann_lr": 9,
     "PhysionetMI_PhysionetMI_all_riemann_lr": 109,
+    "PhysionetMI_PhysionetMI_all_csp_lda": 109,
 }
 SUBJECT_SUMMARY_ONLY_PREFIXES = {"PhysionetMI_PhysionetMI_all_riemann_lr"}
 REQUIRED_PROJECT_FILES = [
@@ -43,6 +46,7 @@ REQUIRED_PROJECT_FILES = [
     "configs/benchmark.yaml",
     "environment.yml",
     "requirements.txt",
+    "requirements-lock.txt",
     "pyproject.toml",
 ]
 REQUIRED_REPORT_SUFFIXES = [

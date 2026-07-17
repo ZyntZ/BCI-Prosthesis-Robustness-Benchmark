@@ -54,6 +54,7 @@ def load_subject_level(results_dir: Path, prefix: str) -> pd.DataFrame:
         raise ValueError(f"Missing required subject-summary columns: {sorted(missing)}")
     # Confirm one inferential row per subject/condition after aggregation.
     key = ["dataset", "subject", "pipeline", "stressor", "montage", "dropout_fraction"]
+    key += [c for c in ["region", "session_train", "session_test"] if c in df.columns and df[c].notna().any()]
     if df.duplicated(key).any():
         raise ValueError("Subject summary contains duplicate subject-condition rows; aggregate before inference.")
     return df
@@ -61,6 +62,7 @@ def load_subject_level(results_dir: Path, prefix: str) -> pd.DataFrame:
 
 def population_metrics(subj: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     group_cols = ["dataset", "pipeline", "stressor", "montage", "dropout_fraction"]
+    group_cols += [c for c in ["region", "session_train", "session_test"] if c in subj.columns and subj[c].notna().any()]
     rows = []
     for keys, g in subj.groupby(group_cols, dropna=False):
         if not isinstance(keys, tuple):

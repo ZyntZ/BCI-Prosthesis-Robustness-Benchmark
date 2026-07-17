@@ -10,8 +10,13 @@ The project uses open EEG datasets available through MOABB and MNE. The benchmar
 The repository is installable as a `src/`-layout Python package and includes lightweight tests for core array utilities, summary-schema stability, and intervention-class rules.
 
 ```bash
-python -m pip install -e .
+# Core and development tests; EEG integration tests skip if MNE is unavailable
+python -m pip install -e ".[dev]"
 python -m compileall -q scripts src
+python -m pytest
+
+# Full test suite, including EEG integration tests
+python -m pip install -e ".[dev,eeg,reports]"
 python -m pytest
 ```
 
@@ -49,7 +54,8 @@ Pip:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-lock.txt
+python -m pip install -e . --no-deps
 ```
 
 The benchmark downloads EEG data through MOABB/MNE when `--download-and-run` is used. Set `moabb_data_dir` in `configs/benchmark.yaml` if the data cache should live outside the repository.
@@ -168,7 +174,7 @@ For completed runs, generate methods-audit tables, paired subject-level effects,
 python scripts/generate_statistical_report.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_riemann_lr
 ```
 
-See `STATISTICAL_REPORTING.md` for output definitions and statistical conventions.
+See `STATISTICAL_REPORTING.md` for output definitions and statistical conventions. Compare the two complete PhysioNet decoders with `make compare-physionet-pipelines`; positive reported differences are CSP-LDA minus Riemann-LR.
 
 
 ## Completed full-run post-processing

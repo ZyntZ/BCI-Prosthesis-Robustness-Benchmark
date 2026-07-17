@@ -20,8 +20,18 @@ DEFAULT_PREFIXES = [
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_csp_lda",
 ]
 METHODS_FIGURE_PREFIXES = ["PhysionetMI_PhysionetMI_all_riemann_lr"]
+FULL_PHYSIONET_PREFIXES = ["PhysionetMI_PhysionetMI_all_csp_lda", "PhysionetMI_PhysionetMI_all_riemann_lr"]
+COMPARISON_OUTPUTS = [
+    "results/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.csv",
+    "results/PhysionetMI_csp_lda_vs_riemann_lr_paired_subject_differences.csv",
+    "results/PhysionetMI_csp_lda_vs_riemann_lr_manifest.json",
+    "reports/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.tex",
+    "reports/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.md",
+    "reports/PhysionetMI_csp_lda_vs_riemann_lr_validation.json",
+]
 HASH_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".csv", ".json", ".cff", ".png", ".svg", ".tex"}
 EXCLUDE_PARTS = {".git", "__pycache__", ".pytest_cache", "checkpoints", ".venv", "venv", "env", ".env", "moabb_data", "mne_data", "data", "dist"}
 PACKAGE_NAMES = ["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "mne", "moabb", "pyriemann", "matplotlib", "plotly", "pytest", "PyYAML"]
@@ -56,11 +66,12 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def iter_manifest_files(root: Path) -> list[Path]:
+def iter_manifest_files(root: Path, excluded_paths: set[Path] | None = None) -> list[Path]:
     files: list[Path] = []
+    excluded = {p.resolve() for p in (excluded_paths or set())}
     for path in root.rglob("*"):
         rel = path.relative_to(root)
-        if not path.is_file() or any(part in EXCLUDE_PARTS for part in rel.parts):
+        if not path.is_file() or path.resolve() in excluded or any(part in EXCLUDE_PARTS for part in rel.parts):
             continue
         if path.suffix in HASH_SUFFIXES or path.name in {"LICENSE", "Makefile", "run_all.sh"}:
             files.append(path)
@@ -107,11 +118,18 @@ def expected_outputs(root: Path, results_dir: Path, reports_dir: Path, prefixes:
         for suffix in EXPECTED_METHODS_FIGURE_SUFFIXES:
             path = reports_dir / f"{fig_prefix}_{suffix}"
             rows.append({"prefix": fig_prefix, "path": display_path(path, root), "exists": path.exists()})
+    for prefix in FULL_PHYSIONET_PREFIXES:
+        for suffix in ["mixed_model_diagnostics.csv", "mixed_model_diagnostics_summary.json"]:
+            path = results_dir / f"{prefix}_{suffix}"
+            rows.append({"prefix": prefix, "path": display_path(path, root), "exists": path.exists()})
+    for relative in COMPARISON_OUTPUTS:
+        path = root / relative
+        rows.append({"prefix": "PhysionetMI_csp_lda_vs_riemann_lr", "path": relative, "exists": path.exists()})
     return rows
 
 
-def build_manifest(root: Path, results_dir: Path, reports_dir: Path, prefixes: list[str]) -> dict[str, object]:
-    files = iter_manifest_files(root)
+def build_manifest(root: Path, results_dir: Path, reports_dir: Path, prefixes: list[str], output_path: Path | None = None) -> dict[str, object]:
+    files = iter_manifest_files(root, {output_path} if output_path else set())
     expected = expected_outputs(root, results_dir, reports_dir, prefixes)
     validation = {prefix: read_validation_summary(reports_dir, prefix) for prefix in prefixes}
     failed_validations = [p for p, s in validation.items() if not s or int(s.get("n_failed_errors", 1)) > 0]
@@ -152,7 +170,7 @@ def main() -> None:
     output = (root / args.output).resolve() if not args.output.is_absolute() else args.output
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    manifest = build_manifest(root, results_dir, reports_dir, prefixes)
+    manifest = build_manifest(root, results_dir, reports_dir, prefixes, output)
     output.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "output": str(output),
