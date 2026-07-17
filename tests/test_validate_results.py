@@ -53,3 +53,38 @@ def test_crosscheck_detects_subject_summary_metric_mismatch():
     mismatch = out.loc[out["check"].eq("subject_summary_roc_auc_mean_match")].iloc[0]
     assert not mismatch["passed"]
     assert mismatch["severity"] == "error"
+
+
+def test_expected_subject_count_passes_and_detects_incomplete_cohort():
+    report, summary = validate_results.validate_prefix(
+        ROOT / "results", "PhysionetMI_dev10", expected_subjects=10
+    )
+    count_check = report.loc[report["check"].eq("expected_subject_count")].iloc[0]
+    assert count_check["passed"]
+    assert summary["n_failed_errors"] == 0
+
+    report, summary = validate_results.validate_prefix(
+        ROOT / "results", "PhysionetMI_dev10", expected_subjects=109
+    )
+    count_check = report.loc[report["check"].eq("expected_subject_count")].iloc[0]
+    assert not count_check["passed"]
+    assert count_check["n_actual"] == 10
+    assert count_check["n_expected"] == 109
+    assert summary["n_failed_errors"] == 1
+
+
+def test_subject_summary_only_mode_is_explicit_and_checks_cohort_size(tmp_path):
+    source = ROOT / "results" / "PhysionetMI_dev10_subject_summary.csv"
+    (tmp_path / source.name).write_bytes(source.read_bytes())
+    report, summary = validate_results.validate_prefix(
+        tmp_path,
+        "PhysionetMI_dev10",
+        expected_subjects=10,
+        allow_missing_fold_results=True,
+    )
+    fold_check = report.loc[report["check"].eq("fold_results_exists")].iloc[0]
+    crosscheck = report.loc[report["check"].eq("subject_summary_crosscheck_possible")].iloc[0]
+    assert fold_check["severity"] == "warning" and not fold_check["passed"]
+    assert crosscheck["severity"] == "warning" and not crosscheck["passed"]
+    assert summary["n_failed_errors"] == 0
+    assert summary["n_failed_warnings"] == 2

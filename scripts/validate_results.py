@@ -212,9 +212,44 @@ def validate_paired_baselines(subject: pd.DataFrame, rows: list[dict[str, object
     )
 
 
-def validate_prefix(results_dir: Path, prefix: str) -> tuple[pd.DataFrame, dict[str, object]]:
+def validate_subject_count(subject: pd.DataFrame, rows: list[dict[str, object]], expected_subjects: int | None) -> None:
+    """Verify cohort completeness when the expected dataset size is known."""
+    if expected_subjects is None:
+        return
+    if "subject" not in subject.columns:
+        add_issue(rows, "error", "expected_subject_count", False, "Cannot count subjects because the subject column is absent", n_expected=expected_subjects)
+        return
+    actual = int(subject["subject"].nunique())
+    add_issue(
+        rows,
+        "error",
+        "expected_subject_count",
+        actual == expected_subjects,
+        f"Expected {expected_subjects} unique subjects; found {actual}",
+        n_expected=expected_subjects,
+        n_actual=actual,
+    )
+
+
+def validate_prefix(
+    results_dir: Path,
+    prefix: str,
+    expected_subjects: int | None = None,
+    allow_missing_fold_results: bool = False,
+) -> tuple[pd.DataFrame, dict[str, object]]:
     rows: list[dict[str, object]] = []
-    results = _load_csv(results_dir / f"{prefix}_results.csv", REQUIRED_RESULTS_COLUMNS, rows, "fold_results")
+    results_path = results_dir / f"{prefix}_results.csv"
+    if allow_missing_fold_results and not results_path.exists():
+        results = pd.DataFrame()
+        add_issue(
+            rows,
+            "warning",
+            "fold_results_exists",
+            False,
+            f"Missing file: {results_path}; validation is limited to the subject-level summary",
+        )
+    else:
+        results = _load_csv(results_path, REQUIRED_RESULTS_COLUMNS, rows, "fold_results")
     subject = _load_csv(results_dir / f"{prefix}_subject_summary.csv", REQUIRED_SUBJECT_COLUMNS, rows, "subject_summary")
     if not results.empty:
         validate_metric_ranges(results, rows, "fold_results")
@@ -225,7 +260,11 @@ def validate_prefix(results_dir: Path, prefix: str) -> tuple[pd.DataFrame, dict[
         validate_duplicate_rows(subject, rows, "subject_summary", KEY_COLS, OPTIONAL_SUBJECT_KEY_COLS)
         validate_channel_counts(subject, rows, "subject_summary")
         validate_paired_baselines(subject, rows)
-    validate_subject_summary_against_results(results, subject, rows)
+        validate_subject_count(subject, rows, expected_subjects)
+    if results.empty and allow_missing_fold_results:
+        add_issue(rows, "warning", "subject_summary_crosscheck_possible", False, "Fold-level results are unavailable; subject-summary aggregation cannot be cross-checked")
+    else:
+        validate_subject_summary_against_results(results, subject, rows)
     report = pd.DataFrame(rows)
     n_errors = int((report["severity"].eq("error") & ~report["passed"]).sum()) if not report.empty else 1
     n_warnings = int((report["severity"].eq("warning") & ~report["passed"]).sum()) if not report.empty else 0
@@ -245,10 +284,21 @@ def main() -> None:
     ap.add_argument("--reports-dir", type=Path, default=Path("reports"))
     ap.add_argument("--prefix", required=True, help="Run prefix, without _results.csv suffix")
     ap.add_argument("--allow-warnings", action="store_true", help="Return success when errors are absent even if warnings are present")
+    ap.add_argument("--expected-subjects", type=int, help="Require this exact number of unique subjects")
+    ap.add_argument(
+        "--allow-missing-fold-results",
+        action="store_true",
+        help="Validate an existing subject summary when fold-level results are unavailable; records explicit warnings",
+    )
     args = ap.parse_args()
 
     args.reports_dir.mkdir(parents=True, exist_ok=True)
-    report, summary = validate_prefix(args.results_dir, args.prefix)
+    report, summary = validate_prefix(
+        args.results_dir,
+        args.prefix,
+        expected_subjects=args.expected_subjects,
+        allow_missing_fold_results=args.allow_missing_fold_results,
+    )
     report_path = args.reports_dir / f"{args.prefix}_validation_checks.csv"
     summary_path = args.reports_dir / f"{args.prefix}_validation_summary.json"
     report.to_csv(report_path, index=False)

@@ -94,9 +94,9 @@ statistical-report-full:
 postprocess-full: ensure-reports
 	$(PYTHON) scripts/refresh_benchmark_summaries.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX) --recover-from-checkpoints --allow-existing-subject-summary --expected-subjects $(EXPECTED_SUBJECTS)
 	@if [ -f "$(RESULTS_DIR)/$(PREFIX)_results.csv" ]; then \
-		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX) --allow-warnings; \
+		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX) --expected-subjects $(EXPECTED_SUBJECTS) --allow-warnings; \
 	else \
-		echo "WARNING: fold-level results/checkpoints are unavailable; continuing from the verified 109-subject summary. Fold-level validation is skipped."; \
+		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX) --expected-subjects $(EXPECTED_SUBJECTS) --allow-missing-fold-results --allow-warnings; \
 	fi
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
@@ -140,18 +140,23 @@ all-full: analyze-full recommendations-full final-stats-full
 validate-physionet-full:
 	@set -e; found=0; \
 	for prefix in PhysionetMI_PhysionetMI_all_csp_lda PhysionetMI_PhysionetMI_all_riemann_lr; do \
-		if [ -f "$(RESULTS_DIR)/$${prefix}_results.csv" ]; then \
-			found=1; $(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix "$${prefix}" --allow-warnings; \
+		if [ -f "$(RESULTS_DIR)/$${prefix}_subject_summary.csv" ]; then \
+			found=1; \
+			if [ -f "$(RESULTS_DIR)/$${prefix}_results.csv" ]; then \
+				$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix "$${prefix}" --expected-subjects 109 --allow-warnings; \
+			else \
+				$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix "$${prefix}" --expected-subjects 109 --allow-missing-fold-results --allow-warnings; \
+			fi; \
 		fi; \
 	done; \
-	if [ "$$found" -eq 0 ]; then echo "No full PhysioNet outputs found; skipping optional full-run validation."; fi
+	if [ "$$found" -eq 0 ]; then echo "No full PhysioNet subject summaries found; skipping optional full-run validation."; fi
 
 validate-dev10:
-	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10 --allow-warnings
+	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10 --expected-subjects 10 --allow-warnings
 
 validate-bnci:
-	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda --allow-warnings
-	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --allow-warnings
+	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda --expected-subjects 9 --allow-warnings
+	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --expected-subjects 9 --allow-warnings
 
 validate-results: validate-dev10 validate-bnci validate-physionet-full
 
