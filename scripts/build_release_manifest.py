@@ -16,7 +16,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_PREFIXES = [
-    "PhysionetMI_dev10",
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_riemann_lr",

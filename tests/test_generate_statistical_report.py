@@ -9,8 +9,8 @@ generate_statistical_report = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(generate_statistical_report)
 
 
-def test_generate_statistical_report_on_existing_dev10_subject_summary():
-    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_dev10")
+def test_generate_statistical_report_on_committed_full_subject_summary():
+    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda")
     audit = generate_statistical_report.methods_audit(subj)
     paired = generate_statistical_report.paired_condition_effects(subj)
     slopes = generate_statistical_report.channel_dropout_slopes(subj)
@@ -27,15 +27,15 @@ def test_generate_statistical_report_on_existing_dev10_subject_summary():
     assert table["condition"].str.contains("channel_dropout").any()
 
 
-def test_condition_labels_are_stable_for_existing_rows():
-    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_dev10")
+def test_condition_labels_are_stable_for_committed_rows():
+    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda")
     labelled = generate_statistical_report.add_condition(subj)
     assert "clean_all_channels" in set(labelled["condition"])
     assert labelled.loc[labelled["stressor"].eq("reduced_montage"), "condition"].str.startswith("reduced_montage_").all()
 
 
 def test_extended_statistical_tables_include_effects_sensitivity_and_flags():
-    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_dev10")
+    subj = generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda")
     paired = generate_statistical_report.paired_condition_effects(subj)
     effects = generate_statistical_report.effect_size_interpretation(paired)
     sensitivity = generate_statistical_report.sensitivity_summary(paired)
@@ -53,7 +53,7 @@ def test_extended_statistical_tables_include_effects_sensitivity_and_flags():
 def test_statistical_report_renderers_do_not_require_optional_pandas_styler_dependencies(tmp_path):
     table = generate_statistical_report.report_table(
         generate_statistical_report.paired_condition_effects(
-            generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_dev10")
+            generate_statistical_report.load_subject_summary(ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda")
         )
     ).head(2)
     out = tmp_path / "table.tex"

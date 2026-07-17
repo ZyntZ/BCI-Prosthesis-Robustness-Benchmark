@@ -10,7 +10,7 @@ Run validation before statistical reporting so schema and aggregation problems a
 python scripts/validate_results.py \
   --results-dir results \
   --reports-dir reports \
-  --prefix PhysionetMI_dev10 \
+  --prefix PhysionetMI_PhysionetMI_all_csp_lda \
   --allow-warnings
 ```
 

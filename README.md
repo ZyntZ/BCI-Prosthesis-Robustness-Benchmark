@@ -164,7 +164,7 @@ The readiness gate writes `SUBMISSION_READINESS.md`, `reports/submission_readine
 Before using result tables for manuscript statistics, run the deterministic CSV validation checks. These checks verify required schemas, metric ranges, duplicate evaluation keys, channel-count/dropout consistency, clean-baseline pairing, and agreement between fold-level results and subject-level summaries:
 
 ```bash
-python scripts/validate_results.py --results-dir results --reports-dir reports --prefix PhysionetMI_dev10 --allow-warnings
+python scripts/validate_results.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_csp_lda --allow-warnings
 make validate-results
 ```
 
@@ -198,15 +198,15 @@ This does not reload EEG or rerun model fitting. The command uses the best avail
 ## Post-processing
 
 ```bash
-python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_dev10 --reports-dir reports
-python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_dev10
-python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_dev10
+python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_PhysionetMI_all_csp_lda --reports-dir reports
+python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_csp_lda
+python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_PhysionetMI_all_csp_lda
 ```
 
 Convenience target:
 
 ```bash
-make all-dev10
+make all-full PREFIX=PhysionetMI_PhysionetMI_all_csp_lda
 ```
 
 
@@ -248,7 +248,7 @@ The figure manifest is `reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_f
 
 ## Main outputs
 
-For a run prefix such as `PhysionetMI_dev10`, the pipeline writes:
+For a run prefix such as `PhysionetMI_PhysionetMI_all_csp_lda`, the pipeline writes:
 
 - `{prefix}_results.csv`: fold/repeat-level benchmark rows.
 - `{prefix}_subject_summary.csv`: one row per subject/condition for inference.

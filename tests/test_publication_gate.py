@@ -13,7 +13,7 @@ def test_release_manifest_builder_hashes_required_files():
         ROOT,
         ROOT / "results",
         ROOT / "reports",
-        ["PhysionetMI_dev10"],
+        ["PhysionetMI_PhysionetMI_all_csp_lda"],
     )
     paths = {row["path"] for row in manifest["file_hashes_sha256"]}
     assert "pyproject.toml" in paths
@@ -50,3 +50,7 @@ def test_default_release_scope_includes_full_physionet_and_uses_its_figures():
     full = "PhysionetMI_PhysionetMI_all_riemann_lr"
     assert full in build_release_manifest.DEFAULT_PREFIXES
     assert build_release_manifest.METHODS_FIGURE_PREFIXES == [full]
+
+
+def test_publication_defaults_do_not_require_excluded_dev10_artifacts():
+    assert "PhysionetMI_dev10" not in build_release_manifest.DEFAULT_PREFIXES

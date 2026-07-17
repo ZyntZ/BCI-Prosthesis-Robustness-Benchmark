@@ -9,8 +9,8 @@ validate_results = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(validate_results)
 
 
-def test_existing_dev10_results_pass_error_level_validation():
-    report, summary = validate_results.validate_prefix(ROOT / "results", "PhysionetMI_dev10")
+def test_existing_full_csp_results_pass_error_level_validation():
+    report, summary = validate_results.validate_prefix(ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda")
     assert summary["n_failed_errors"] == 0
     assert summary["n_checks"] >= 10
     assert {"fold_results_roc_auc_range", "subject_summary_key_match", "clean_baseline_present"}.issubset(set(report["check"]))
@@ -57,29 +57,29 @@ def test_crosscheck_detects_subject_summary_metric_mismatch():
 
 def test_expected_subject_count_passes_and_detects_incomplete_cohort():
     report, summary = validate_results.validate_prefix(
-        ROOT / "results", "PhysionetMI_dev10", expected_subjects=10
+        ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda", expected_subjects=109
     )
     count_check = report.loc[report["check"].eq("expected_subject_count")].iloc[0]
     assert count_check["passed"]
     assert summary["n_failed_errors"] == 0
 
     report, summary = validate_results.validate_prefix(
-        ROOT / "results", "PhysionetMI_dev10", expected_subjects=109
+        ROOT / "results", "PhysionetMI_PhysionetMI_all_csp_lda", expected_subjects=108
     )
     count_check = report.loc[report["check"].eq("expected_subject_count")].iloc[0]
     assert not count_check["passed"]
-    assert count_check["n_actual"] == 10
-    assert count_check["n_expected"] == 109
+    assert count_check["n_actual"] == 109
+    assert count_check["n_expected"] == 108
     assert summary["n_failed_errors"] == 1
 
 
 def test_subject_summary_only_mode_is_explicit_and_checks_cohort_size(tmp_path):
-    source = ROOT / "results" / "PhysionetMI_dev10_subject_summary.csv"
+    source = ROOT / "results" / "PhysionetMI_PhysionetMI_all_csp_lda_subject_summary.csv"
     (tmp_path / source.name).write_bytes(source.read_bytes())
     report, summary = validate_results.validate_prefix(
         tmp_path,
-        "PhysionetMI_dev10",
-        expected_subjects=10,
+        "PhysionetMI_PhysionetMI_all_csp_lda",
+        expected_subjects=109,
         allow_missing_fold_results=True,
     )
     fold_check = report.loc[report["check"].eq("fold_results_exists")].iloc[0]

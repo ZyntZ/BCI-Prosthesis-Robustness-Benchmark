@@ -12,7 +12,7 @@ MAX_CONSECUTIVE_FAILURES ?= 5
 SKIP_FAILED_FLAG = $(if $(filter 1 true yes,$(SKIP_FAILED)),--skip-failed,)
 
 
-.PHONY: compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
+.PHONY: compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full
 
 install-lock:
 	$(PYTHON) -m pip install -r requirements-lock.txt
@@ -75,17 +75,6 @@ physionet-full-strict: ensure-eeg
 bnci-full: ensure-eeg
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --download-and-run --dataset BNCI2014-001 --include-reduced-montage --include-region-dropout --include-cross-session --pipeline csp_lda --suffix BNCI2014_001_all_csp_lda
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --download-and-run --dataset BNCI2014-001 --include-reduced-montage --include-region-dropout --include-cross-session --pipeline riemann_lr --suffix BNCI2014_001_all_riemann_lr
-
-analyze-dev10: ensure-reports
-	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10
-
-recommendations-dev10: ensure-reports
-	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10
-
-final-stats-dev10:
-	$(PYTHON) scripts/final_statistics.py --results-dir $(RESULTS_DIR) --prefix PhysionetMI_dev10
-
-all-dev10: analyze-dev10 recommendations-dev10 final-stats-dev10
 
 
 physionet-full-skip-failed: ensure-eeg
@@ -160,20 +149,16 @@ validate-physionet-full:
 	done; \
 	if [ "$$found" -eq 0 ]; then echo "No full PhysioNet subject summaries found; skipping optional full-run validation."; fi
 
-validate-dev10:
-	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10 --expected-subjects 10 --allow-warnings
-
 validate-bnci:
 	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda --expected-subjects 9 --allow-warnings
 	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --expected-subjects 9 --allow-warnings
 
-validate-results: validate-dev10 validate-bnci validate-physionet-full
+validate-results: validate-bnci validate-physionet-full
 
 statistical-report:
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr
 
 statistical-reports:
-	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr
@@ -199,6 +184,6 @@ archive-audit: submission-readiness
 	$(PYTHON) scripts/build_release_archive.py --audit-only
 
 release-archive: archive-audit
-	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_csp_riemann_publication_update.zip
+	$(PYTHON) scripts/build_release_archive.py --output dist/JNM_ci_dev10_scope_hotfix.zip
 
 publication-check: compile-check test submission-readiness archive-audit

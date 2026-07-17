@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-17T16:48:34.756886+00:00",
+  "generated_at_utc": "2026-07-17T17:45:05.089000+00:00",
   "python": "3.13.7",
   "platform": "Linux-4.4.0-x86_64-with-glibc2.36",
   "package_versions": {
@@ -17,20 +17,12 @@
     "PyYAML": "6.0.3"
   },
   "prefixes": [
-    "PhysionetMI_dev10",
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_csp_lda"
   ],
   "validation_summaries": {
-    "PhysionetMI_dev10": {
-      "prefix": "PhysionetMI_dev10",
-      "passed": true,
-      "n_checks": 24,
-      "n_failed_errors": 0,
-      "n_failed_warnings": 0
-    },
     "BNCI2014-001_BNCI2014_001_all_csp_lda": {
       "prefix": "BNCI2014-001_BNCI2014_001_all_csp_lda",
       "passed": true,
@@ -61,71 +53,6 @@
     }
   },
   "expected_output_checks": [
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_methods_audit.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_paired_effects.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_effect_size_interpretation.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_sensitivity_summary.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_overclaim_flags.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_channel_dropout_subject_slopes.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_channel_dropout_slope_summary.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_report_table.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "results/PhysionetMI_dev10_statistical_report_manifest.json",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "reports/PhysionetMI_dev10_statistical_report_table.tex",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "reports/PhysionetMI_dev10_statistical_report_summary.md",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "reports/PhysionetMI_dev10_validation_checks.csv",
-      "exists": true
-    },
-    {
-      "prefix": "PhysionetMI_dev10",
-      "path": "reports/PhysionetMI_dev10_validation_summary.json",
-      "exists": true
-    },
     {
       "prefix": "BNCI2014-001_BNCI2014_001_all_csp_lda",
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_methods_audit.csv",
@@ -483,7 +410,7 @@
     },
     {
       "path": "CITATION.cff",
-      "sha256": "aab1fe0cfabd2167a42eaacdabf4110a435b724e49898d896a28eb2ac5e8a9ab",
+      "sha256": "d98e7a8010522c3d04947c12b76537382b3394a39100de0c72f4a33bcae8e5bc",
       "bytes": 823
     },
     {
@@ -498,27 +425,27 @@
     },
     {
       "path": "Makefile",
-      "sha256": "384d7b27dd92df962b80257abb52365a7555ad4ff83d14d3881a101d6e06f0cd",
-      "bytes": 12773
+      "sha256": "948598f031ce043b82f1cb9d875311b745f57c48bbc7058b800b7059ce0b5baa",
+      "bytes": 11846
     },
     {
       "path": "README.md",
-      "sha256": "e155bd837a228e47f63b4c9e80c1cb2025820aec9908928867d93afaa368bbd5",
-      "bytes": 14068
+      "sha256": "749d022bd17714c3e5c399b069cf56d8e4313509530dd522f80d38f4add8aed2",
+      "bytes": 14200
     },
     {
       "path": "REPRODUCIBILITY.md",
-      "sha256": "349dfb807ed27c61f76521c1c5b670a294584b4ac9aadd194d384b187a6dc799",
-      "bytes": 3387
+      "sha256": "773482d53edce636f2422af8994331402055afe821bb75271d97e97279a90e92",
+      "bytes": 3441
     },
     {
       "path": "STATISTICAL_REPORTING.md",
-      "sha256": "f58fd26768aa6df96e52303e4c381a793ac22a6bdfd0ed6a7c388ae99467ba93",
-      "bytes": 5521
+      "sha256": "6777a6ea078b2e153a9305f71807de572a00bcbcc352ecec7ec0e9778eb1b5bc",
+      "bytes": 5539
     },
     {
       "path": "SUBMISSION_READINESS.md",
-      "sha256": "48168543b51d72f0b09adbea8fb343d7e277d68936122e3727066dc8b91a6ec2",
+      "sha256": "1cc4d71d7a0b6daae67d69c0e068095a1430ab418e287c7b9410b4e3cb89b245",
       "bytes": 832
     },
     {
@@ -553,7 +480,7 @@
     },
     {
       "path": "manuscript/manuscript.tex",
-      "sha256": "e94db1641469ab1875683b7ccd3818431c0dced6a2872d1aa23737cc578e697f",
+      "sha256": "4a08f37ea566893f3de291055086c3bdb1424bb1b2b3cf675dee3d0540a64e92",
       "bytes": 26559
     },
     {
@@ -580,41 +507,6 @@
       "path": "reports/BNCI2014-001_BNCI2014_001_all_csp_lda_validation_summary.json",
       "sha256": "6ae37f1a9beb6374a4ed1bfb84f3dca6228f59ffc283b1f0e502a006d89911a6",
       "bytes": 142
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_figures_manifest.json",
-      "sha256": "6efcdb977af64f02ad56623a889317d331d5944166966bf5995e3b12aaed84c1",
-      "bytes": 1740
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.png",
-      "sha256": "30c422e6138ee00f8aa05082764dbb7cc6afaf2da6cb86da477c80160618a35c",
-      "bytes": 62493
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.svg",
-      "sha256": "311842c364b940e54b48815ffa070cb112e01694917a29e65c7cbf62327b9741",
-      "bytes": 10475
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.png",
-      "sha256": "31bfe467a1c57c8fb419918f753a756ebd84326817d4aed504b4c8af26e58d80",
-      "bytes": 131953
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.svg",
-      "sha256": "6b6609e0d49566e68af639cb06e09b2ac410be91079062c8ead9ef8b959d675e",
-      "bytes": 9916
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.png",
-      "sha256": "8073713b43fcfa0a5b8943ebddf3bb42120b6989d63f86a3a884c7f88f984bbb",
-      "bytes": 100190
-    },
-    {
-      "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.svg",
-      "sha256": "dd4f36932d02ba53aea8dd1aa535d3ad6630285c1a8ab5b8a69061b2c97eee86",
-      "bytes": 16108
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_report_summary.md",
@@ -668,7 +560,7 @@
     },
     {
       "path": "reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_intervention_class_counts.svg",
-      "sha256": "e7a32213afe3835fb172f7ea26f0aacbc3368c01d1e704ae7d28f5e82b107dcc",
+      "sha256": "3a2ce198df6d1826d46de4334fb6853a5c43933db44146d77e36e4b2d1e164f9",
       "bytes": 10909
     },
     {
@@ -678,7 +570,7 @@
     },
     {
       "path": "reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_pipeline_schematic.svg",
-      "sha256": "55463b43e8f28cfd30d1001242c9513d796ad95e4c2c0c568d8b2a9fefa384a6",
+      "sha256": "dbbd1376ac83bed4c8d0d780f48b4871f7517546bcc7470b0d82c1aad16a930a",
       "bytes": 9774
     },
     {
@@ -688,7 +580,7 @@
     },
     {
       "path": "reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_robustness_degradation_roc_auc.svg",
-      "sha256": "0d500efb6289078d6b15fa1b4a4036577c641fc655aea54707407c88fcf45279",
+      "sha256": "111cfb046bd04d97e479c5f3bf8a52585c9f0b4bbc223e554da0bbfe38bf2cd5",
       "bytes": 46159
     },
     {
@@ -727,34 +619,14 @@
       "bytes": 782
     },
     {
-      "path": "reports/PhysionetMI_dev10_statistical_report_summary.md",
-      "sha256": "3d0f580976d7be9408e61f5caaa6e296470d9570b9f2316839c23350ceaf5eaf",
-      "bytes": 8380
-    },
-    {
-      "path": "reports/PhysionetMI_dev10_statistical_report_table.tex",
-      "sha256": "63cba44e99287a3ee1b7fc22253e86243dec9d75c6aa06304ee5c064e052abff",
-      "bytes": 2447
-    },
-    {
-      "path": "reports/PhysionetMI_dev10_validation_checks.csv",
-      "sha256": "e46c0e7a3fed4459adc90f096565f3779ce766088753f4f72ac539f7eedf4389",
-      "bytes": 3363
-    },
-    {
-      "path": "reports/PhysionetMI_dev10_validation_summary.json",
-      "sha256": "68a6d804e2de2823543cc3be6dd90aa5293b7108b6eb682c02cd40c06f2d0f50",
-      "bytes": 122
-    },
-    {
       "path": "reports/submission_readiness_checks.csv",
-      "sha256": "2baebd5fe42546c4afd89390912927ed9fa5f3f00f7af568d15dfafd429f64f5",
-      "bytes": 18837
+      "sha256": "43a4f88e931c7a9c9cfd99f0b51e9497aca47ee4e7b5a9d1cb2da09bd3b0b00a",
+      "bytes": 16434
     },
     {
       "path": "reports/submission_readiness_summary.json",
-      "sha256": "2fd5fedbd2842b8507eaa0ae5ce0eed58ac35f7706916552851d3c6e3bc21199",
-      "bytes": 475
+      "sha256": "f011865a8947ee4668df29e3874490c0d57e2aa590aece5c2312ccef71adcb36",
+      "bytes": 366
     },
     {
       "path": "requirements-lock.txt",
@@ -987,11 +859,6 @@
       "bytes": 13026
     },
     {
-      "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_failure_rates_next.csv",
-      "sha256": "c691e3685990118326b44b27b521907f9c5bf74429aed90ffada791aaf01c111",
-      "bytes": 373
-    },
-    {
       "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_final_intervention_class_rates.csv",
       "sha256": "33dd9c2bc7b88587ed971ea89408467f322db0a76e8e10b5e1700b5c648997f5",
       "bytes": 741
@@ -1050,16 +917,6 @@
       "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_mixed_model_diagnostics_summary.json",
       "sha256": "f32620e441067f329decfed4ce339dcf70e59cced75a22a62e818072fccc7954",
       "bytes": 377
-    },
-    {
-      "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_next_summary.json",
-      "sha256": "b6914b8126cc87eb71a59074b080ed7d8c60bb5efd62ace65f001e95f34cb0e4",
-      "bytes": 227
-    },
-    {
-      "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_paired_stats_next.csv",
-      "sha256": "5816a58630984491a878f89f9cf3b83fd30362feb7efa5c97a94954f1064fe08",
-      "bytes": 1647
     },
     {
       "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_population_summary.csv",
@@ -1127,16 +984,6 @@
       "bytes": 149376
     },
     {
-      "path": "results/PhysionetMI_PhysionetMI_all_csp_lda_subject_wide.csv",
-      "sha256": "3a774d565649d136cbd639141f2fd17e23c78b4c633cfa95399bc758c43a7da9",
-      "bytes": 13430
-    },
-    {
-      "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_failure_rates_next.csv",
-      "sha256": "cb223d1b28784218b75d1cc0380e31afdf93d2f8c435b1f839d67b95285bdeea",
-      "bytes": 378
-    },
-    {
       "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_final_intervention_class_rates.csv",
       "sha256": "a78104643a0595a7ca4cff1b6caa559ce5a52d4a476a283d463d1800657b01bc",
       "bytes": 743
@@ -1195,16 +1042,6 @@
       "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_mixed_model_diagnostics_summary.json",
       "sha256": "79624347fa766c2d47b3aafec531966808c20738ef604584a3860e83f57db7f4",
       "bytes": 383
-    },
-    {
-      "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_next_summary.json",
-      "sha256": "191a902097e54904ec41542026568a165438e306e446c03746848a51e57a7948",
-      "bytes": 226
-    },
-    {
-      "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_paired_stats_next.csv",
-      "sha256": "9c9d8a2f4d76ea01493ab9c8c5e39a856e6c7fdbeccf82dea812197d4478b9f1",
-      "bytes": 1668
     },
     {
       "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_population_summary.csv",
@@ -1267,26 +1104,6 @@
       "bytes": 131625
     },
     {
-      "path": "results/PhysionetMI_PhysionetMI_all_riemann_lr_subject_wide.csv",
-      "sha256": "666fa572415c721a398b340a6b885aef6d165760c6cdb7896e13df6548148bf1",
-      "bytes": 13506
-    },
-    {
-      "path": "results/PhysionetMI_Physionet_csp_preflight_population_summary.csv",
-      "sha256": "1a98710de854ed292d2e51035559f22cb397dee438316fa3e83449cf1f18ce0f",
-      "bytes": 1705
-    },
-    {
-      "path": "results/PhysionetMI_Physionet_csp_preflight_results.csv",
-      "sha256": "ebb3e87014df57df0e44df5208a5fc78c2d332dab56735d2e31391a656716b52",
-      "bytes": 30476
-    },
-    {
-      "path": "results/PhysionetMI_Physionet_csp_preflight_subject_summary.csv",
-      "sha256": "f32be113e7b54a399c577bdc9c85b34692991c5b41cd9213e0126927335e5114",
-      "bytes": 1495
-    },
-    {
       "path": "results/PhysionetMI_csp_lda_vs_riemann_lr_manifest.json",
       "sha256": "320a438dd7eb6239c396f94e2aa538494ea6d8f3a63cc767ecd18c5401a9ff76",
       "bytes": 597
@@ -1302,161 +1119,6 @@
       "bytes": 53366
     },
     {
-      "path": "results/PhysionetMI_dev10_failure_rates_next.csv",
-      "sha256": "fe23b5dd079e36030b251f57eb39b15cb3b66dfee41cd7e06af7236efc760312",
-      "bytes": 338
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_intervention_class_rates.csv",
-      "sha256": "e2b4c86aebc1d8747ec3de01219570ba649da81011873b50e244b9453d97c203",
-      "bytes": 608
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_intervention_classes.csv",
-      "sha256": "62efc060e4ef2e7f391364f3e007806546fc902cfc00f504d65ebce887a4d37f",
-      "bytes": 1304
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_manifest.json",
-      "sha256": "35658eb56997588f1c45da5c02e4e491ccdf19b8afceda5a363ed4bacac1a327",
-      "bytes": 743
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_mixed_effects.csv",
-      "sha256": "8f75d7bacd76052775a0535b296e47fd014e27e7f63949ba3ba9a42906366085",
-      "bytes": 2392
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_paired_sensitivity.csv",
-      "sha256": "0557b3680e0ef393a95f1fc1219b05a0fa6b9ff6679d6e096c7d665e188e8f48",
-      "bytes": 1526
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_population_metrics.csv",
-      "sha256": "19b4d4040fd10c161e1546cde13db258afbba1190c0e1d6d50e4ddcd4356ac6f",
-      "bytes": 2065
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_subject_level_metrics.csv",
-      "sha256": "877d60ea892936080ff5e5fdcf109f8022d72c74d98f81e795c87f8e2179f102",
-      "bytes": 8878
-    },
-    {
-      "path": "results/PhysionetMI_dev10_final_subject_wide_metrics.csv",
-      "sha256": "6e814f1f6e0ba1c32057f461e4a9689a108f4f079e73501a4885cd247835d588",
-      "bytes": 1489
-    },
-    {
-      "path": "results/PhysionetMI_dev10_intervention_recommendations.csv",
-      "sha256": "1daea13dd0bcbe86924e24275fc90ce1660ae88be7733ce1eb2d0072269500a6",
-      "bytes": 2713
-    },
-    {
-      "path": "results/PhysionetMI_dev10_intervention_summary.csv",
-      "sha256": "48e637ab149d8946fe7612bf4e7b10609b4c0e084a866f8532d156db2e5cfcf5",
-      "bytes": 391
-    },
-    {
-      "path": "results/PhysionetMI_dev10_next_summary.json",
-      "sha256": "7ad383d8395807c7219275174815172a4e20bbd888478c2315a75b16db438b8f",
-      "bytes": 211
-    },
-    {
-      "path": "results/PhysionetMI_dev10_paired_comparisons.csv",
-      "sha256": "7de612d5a509d06a404917bb00eb339130b22c4110cc1f8b35cb5cc3341485ee",
-      "bytes": 1899
-    },
-    {
-      "path": "results/PhysionetMI_dev10_paired_stats_next.csv",
-      "sha256": "aa7458b8b8d8f3cfe338f78c7741f074bbaf45c0c80d2ad9cf12cfce35b56ed0",
-      "bytes": 1425
-    },
-    {
-      "path": "results/PhysionetMI_dev10_population_summary.csv",
-      "sha256": "0c6d07c310aa8fc416a941cfca968d0e0e2ddf5595137575122d9bfe6847b6c0",
-      "bytes": 2212
-    },
-    {
-      "path": "results/PhysionetMI_dev10_reliability_flags.csv",
-      "sha256": "b3412d0e586d301287b7dca988480da6967f919f7234563976a312419aa1c79d",
-      "bytes": 184
-    },
-    {
-      "path": "results/PhysionetMI_dev10_reliability_flags_ci.csv",
-      "sha256": "985d4f665ff1784230d55df6f2c7e52e87a3e4c0fb130d73fe614447260eabb6",
-      "bytes": 398
-    },
-    {
-      "path": "results/PhysionetMI_dev10_results.csv",
-      "sha256": "44e01a03a03d6cd49102c7636dc8a5d69193a71d741bc85cc29cb721f7090dd6",
-      "bytes": 273427
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_channel_dropout_slope_summary.csv",
-      "sha256": "340d8be833e827f6b2adc0f0fadd9191190d949e1f1d5e61c2dd12a30ec3274d",
-      "bytes": 1064
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_channel_dropout_subject_slopes.csv",
-      "sha256": "070765684a3dc0cca7c4cba629f89c1ad2ec6e3e77610e8bd672a7019ba3033f",
-      "bytes": 5874
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_effect_size_interpretation.csv",
-      "sha256": "c292dc6620b15ebbe8e312160bcd24f8bcf580a9bf753b80facb295f105dd3ca",
-      "bytes": 6433
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_methods_audit.csv",
-      "sha256": "db64a301dfdb6bc8c7ad0268173d359f17730eb571c1b0b9e09ccd5ab5c326f3",
-      "bytes": 439
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_overclaim_flags.csv",
-      "sha256": "da4cd56a9caa8e3fadca1ba626960817a1dc6be5b40b1c81382da1c009e1c7a7",
-      "bytes": 526
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_paired_effects.csv",
-      "sha256": "2bad563bb1eb8b920eacca36167158af2b62c11f8e9ad84e0c411051b520c50f",
-      "bytes": 10390
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_report_manifest.json",
-      "sha256": "3439cc9c731cea2c69ee0cb79ad54a6ec7d8ce9727d48f485b00ec74c001bf3f",
-      "bytes": 1176
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_report_table.csv",
-      "sha256": "30adfeb7bdf2ef772a02871d7e55b69c98f8ea097afa1d4c993b04151b19651a",
-      "bytes": 3121
-    },
-    {
-      "path": "results/PhysionetMI_dev10_statistical_sensitivity_summary.csv",
-      "sha256": "391d583c96f7da9e6c4fec372303394fb728504fc90ec1080c65152e036956bd",
-      "bytes": 3151
-    },
-    {
-      "path": "results/PhysionetMI_dev10_subject_risk_cards.csv",
-      "sha256": "224878b949cbc19f16ec57136e7ddcc495061bd7047cc7aa8d7bc49b8224e1d2",
-      "bytes": 1205
-    },
-    {
-      "path": "results/PhysionetMI_dev10_subject_summary.csv",
-      "sha256": "ef5a4048e793a599c7479a5fe03eed6a8f3b23400c86605e2fbf55e2da548761",
-      "bytes": 9083
-    },
-    {
-      "path": "results/PhysionetMI_dev10_subject_wide.csv",
-      "sha256": "ab8b7bea4182b921926a4228c8f2ef303e326e604cfa021a11875582e3a63603",
-      "bytes": 2226
-    },
-    {
-      "path": "run_all.sh",
-      "sha256": "abc4ea8f19ba5d3d4b4074ab761624bf8ba23a6ff56866d023d1f3c57632e4ef",
-      "bytes": 1369
-    },
-    {
       "path": "scripts/analyze_robustness.py",
       "sha256": "c81fdb13255959534c5a0af67ee12e8e080a47e51f70bdf04994e4ee5681de33",
       "bytes": 13139
@@ -1468,8 +1130,8 @@
     },
     {
       "path": "scripts/build_release_manifest.py",
-      "sha256": "269f4fe5f41c6bba477f42a7ad17698b591c2e65f27ef88a09839adbad2f981d",
-      "bytes": 8767
+      "sha256": "f0dee13e34fc5627235452c0d2a7a14b279df0b9c8b21e3c77325b44620f05a0",
+      "bytes": 8742
     },
     {
       "path": "scripts/compare_physionet_pipelines.py",
@@ -1478,8 +1140,8 @@
     },
     {
       "path": "scripts/final_statistics.py",
-      "sha256": "143db38c35e0de403aaedc436bcb9f24df984d15baa49365d2ee16ca55c714c1",
-      "bytes": 15623
+      "sha256": "629218c8618b997d4b113956867f413efbda9d908a5737fbb62f7c2d57a43217",
+      "bytes": 15641
     },
     {
       "path": "scripts/generate_methods_figures.py",
@@ -1493,8 +1155,8 @@
     },
     {
       "path": "scripts/generate_submission_readiness.py",
-      "sha256": "f0cb358263397fddb4b89072301e95f113d444a15fa551d7478966b953aef40d",
-      "bytes": 13551
+      "sha256": "5fb3ddd2671db24795e4d64c6d0f1ee4f6fb2e610499f56aafd04f8e914a3f7f",
+      "bytes": 13497
     },
     {
       "path": "scripts/mixed_model_diagnostics.py",
@@ -1503,8 +1165,8 @@
     },
     {
       "path": "scripts/recommend_interventions.py",
-      "sha256": "e7f6fd82943f597baf38b05e47b353aea18b74da504bc9ee6070faf4869885f7",
-      "bytes": 10683
+      "sha256": "9f062fc04931c58bbf80e942b9e726e387fad76cda564d39deeb4bfb9893cb28",
+      "bytes": 10701
     },
     {
       "path": "scripts/refresh_benchmark_summaries.py",
@@ -1553,23 +1215,23 @@
     },
     {
       "path": "tests/test_generate_statistical_report.py",
-      "sha256": "18db0fe9fc5269eadde8de739e8ea7b2243a9831e0cb8bfd00befe2ef5586331",
-      "bytes": 3278
+      "sha256": "ca41120c68e6a9c24bc995e39cdd615a258b4bb74bf428d18b4207d8a769b460",
+      "bytes": 3351
     },
     {
       "path": "tests/test_generate_submission_readiness.py",
-      "sha256": "789e1c1aeacda47944bb062bd595a069fb4de2c8de7f4f19fe8fc5d5053a5f51",
-      "bytes": 5672
+      "sha256": "0ad50c7a299fa0fb9d1274df5ba6e9054d9d0474b76f53e76be22b905055a552",
+      "bytes": 5923
     },
     {
       "path": "tests/test_makefile_eeg_dependencies.py",
-      "sha256": "2df4b52a524b7e95a6cdf0e4e92e87f6e8cc772cceefdf891b1d8a7bb26a3d3d",
-      "bytes": 3223
+      "sha256": "919a4fde7c25ec96a3fae46e90817b5c9cb147c4ffd9d06a27521e0b1aaf8b99",
+      "bytes": 3259
     },
     {
       "path": "tests/test_publication_gate.py",
-      "sha256": "9948941295f62cf96bbfa04755cdb452a16c3321f77e14843b936ca42dc7a8d8",
-      "bytes": 1974
+      "sha256": "10b7b6713dab213404784241b31375edf169be531675b2db1316ecee97ece998",
+      "bytes": 2145
     },
     {
       "path": "tests/test_run_benchmark.py",
@@ -1578,8 +1240,8 @@
     },
     {
       "path": "tests/test_validate_results.py",
-      "sha256": "6f78b2b6033f3ce328f77e358466f708dbab8285641814d4906e6d6b50af6538",
-      "bytes": 3510
+      "sha256": "49f11515b69d376ea41e04197993f00aadd47be0516a3c1e813c2053b2bab3e7",
+      "bytes": 3606
     }
   ],
   "note": "Manifest derived from files present in this repository snapshot; no benchmark observations were generated."

@@ -35,9 +35,9 @@ python -m compileall -q scripts src
 ## Recreate derived PhysioNetMI development outputs
 
 ```bash
-python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_dev10 --reports-dir reports
-python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_dev10
-python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_dev10
+python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_PhysionetMI_all_csp_lda --reports-dir reports
+python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_csp_lda
+python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_PhysionetMI_all_csp_lda
 # writes one *_final_mixed_effects.csv containing separate all_conditions and channel_dropout_dose model_id values
 ```
 

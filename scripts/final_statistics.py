@@ -287,7 +287,7 @@ def mixed_effects(subj: pd.DataFrame) -> pd.DataFrame:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results-dir", type=Path, default=Path("results"))
-    ap.add_argument("--prefix", default="PhysionetMI_dev10")
+    ap.add_argument("--prefix", default="PhysionetMI_PhysionetMI_all_csp_lda")
     ap.add_argument("--clean-threshold", type=float, default=0.60)
     ap.add_argument("--failure-threshold", type=float, default=0.60)
     args = ap.parse_args()

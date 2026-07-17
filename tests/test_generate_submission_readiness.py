@@ -131,3 +131,8 @@ def test_full_physionet_is_first_class_and_exact_cohort_size_is_enforced():
     folds = checks.loc[checks["check"].eq(f"{full}:results.csv")].iloc[0]
     assert count["passed"] and count["n_subjects"] == 109
     assert folds["severity"] == "warning" and not folds["passed"]
+
+
+def test_submission_defaults_do_not_require_excluded_dev10_artifacts():
+    assert "PhysionetMI_dev10" not in generate_submission_readiness.DEFAULT_PREFIXES
+    assert "PhysionetMI_dev10" not in generate_submission_readiness.EXPECTED_SUBJECT_COUNTS

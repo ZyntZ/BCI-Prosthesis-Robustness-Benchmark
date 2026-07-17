@@ -16,7 +16,6 @@ from typing import Any
 import pandas as pd
 
 DEFAULT_PREFIXES = [
-    "PhysionetMI_dev10",
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
     "PhysionetMI_PhysionetMI_all_riemann_lr",
@@ -29,7 +28,6 @@ FULL_RUN_PREFIXES = [
     "PhysionetMI_PhysionetMI_all_csp_lda",
 ]
 EXPECTED_SUBJECT_COUNTS = {
-    "PhysionetMI_dev10": 10,
     "BNCI2014-001_BNCI2014_001_all_csp_lda": 9,
     "BNCI2014-001_BNCI2014_001_all_riemann_lr": 9,
     "PhysionetMI_PhysionetMI_all_riemann_lr": 109,

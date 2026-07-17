@@ -195,7 +195,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results-dir", type=Path, default=Path("results"))
     parser.add_argument("--reports-dir", type=Path, default=Path("reports"))
-    parser.add_argument("--prefix", default="PhysionetMI_dev10")
+    parser.add_argument("--prefix", default="PhysionetMI_PhysionetMI_all_csp_lda")
     parser.add_argument("--clean-threshold", type=float, default=0.60)
     parser.add_argument("--failure-threshold", type=float, default=0.60)
     parser.add_argument("--rescue-margin", type=float, default=0.00, help="Minimum reduced-montage gain vs clean to count as rescue")

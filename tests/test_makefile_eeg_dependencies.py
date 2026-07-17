@@ -24,7 +24,7 @@ def test_eeg_install_uses_same_configured_python():
 
 def test_postprocessing_targets_require_reporting_dependencies():
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
-    for target in ["analyze-dev10", "recommendations-dev10", "analyze-full", "recommendations-full"]:
+    for target in ["analyze-full", "recommendations-full"]:
         assert f"{target}: ensure-reports" in makefile
     assert '$(PYTHON) -m pip install -e ".[reports]"' in makefile
     assert '$(PYTHON) -c "import matplotlib, plotly, seaborn"' in makefile
@@ -32,7 +32,8 @@ def test_postprocessing_targets_require_reporting_dependencies():
 
 def test_validation_includes_completed_full_physionet_outputs():
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
-    assert "validate-results: validate-dev10 validate-bnci validate-physionet-full" in makefile
+    assert "validate-results: validate-bnci validate-physionet-full" in makefile
+    assert "validate-dev10" not in makefile.split("validate-results:", 1)[1].splitlines()[0]
     assert "PhysionetMI_PhysionetMI_all_csp_lda" in makefile
     assert "PhysionetMI_PhysionetMI_all_riemann_lr" in makefile
 
