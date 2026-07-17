@@ -146,6 +146,18 @@ python scripts/generate_statistical_report.py --results-dir results --reports-di
 See `STATISTICAL_REPORTING.md` for output definitions and statistical conventions.
 
 
+## Completed full-run post-processing
+
+After `make physionet-full` completes, process and validate a full result prefix with one command. The target installs the reporting extra when Plotly is missing, rebuilds subject/population summaries from the existing fold-level CSV, validates them, generates statistical reports and HTML outputs, and runs final statistics:
+
+```bash
+make postprocess-full PREFIX=PhysionetMI_PhysionetMI_all_riemann_lr
+# or for CSP + LDA:
+make postprocess-full PREFIX=PhysionetMI_PhysionetMI_all_csp_lda
+```
+
+This does not reload EEG or rerun model fitting. Existing `*_results.csv` files are the source. Rebuilding summaries preserves named region-dropout and cross-session condition identifiers.
+
 ## Post-processing
 
 ```bash

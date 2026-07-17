@@ -31,3 +31,16 @@ def test_release_manifest_detects_expected_outputs_without_mutating_inputs(tmp_p
     )
     assert not manifest["release_ready"]
     assert manifest["missing_expected_outputs"]
+
+
+def test_manifest_excludes_local_environments_and_raw_data(tmp_path):
+    root = tmp_path / "repo"
+    root.mkdir()
+    (root / "kept.py").write_text("print('kept')\n", encoding="utf-8")
+    for directory in [".venv", "moabb_data", "dist"]:
+        path = root / directory
+        path.mkdir()
+        (path / "excluded.py").write_text("print('excluded')\n", encoding="utf-8")
+    paths = {path.relative_to(root).as_posix() for path in build_release_manifest.iter_manifest_files(root)}
+    assert "kept.py" in paths
+    assert not any("excluded.py" in path for path in paths)

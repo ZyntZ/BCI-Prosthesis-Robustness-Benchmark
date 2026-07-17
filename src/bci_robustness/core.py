@@ -257,9 +257,11 @@ def subject_level_summary(results: pd.DataFrame) -> pd.DataFrame:
     if "n_dropped_channels" not in results.columns:
         results["n_dropped_channels"] = np.nan
     group_cols = ["dataset", "subject", "pipeline", "stressor", "montage", "dropout_fraction"]
+    optional_condition_cols = ["region", "session_train", "session_test"]
     present = [c for c in group_cols if c in results.columns]
+    present += [c for c in optional_condition_cols if c in results.columns and results[c].notna().any()]
     return (
-        results.groupby(present, as_index=False)
+        results.groupby(present, as_index=False, dropna=False)
         .agg(
             roc_auc=("roc_auc", "mean"),
             balanced_accuracy=("balanced_accuracy", "mean"),
@@ -297,6 +299,7 @@ def population_summary(results: pd.DataFrame, random_seed: int = 42) -> pd.DataF
     """Population summary after collapsing to one row per subject/condition."""
     subj = subject_level_summary(results)
     group_cols = ["dataset", "pipeline", "stressor", "montage", "dropout_fraction"]
+    group_cols += [c for c in ["region", "session_train", "session_test"] if c in subj.columns and subj[c].notna().any()]
     rows = []
     for keys, g in subj.groupby(group_cols, dropna=False):
         if not isinstance(keys, tuple):

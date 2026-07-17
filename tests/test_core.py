@@ -81,3 +81,19 @@ def test_subject_level_summary_adds_missing_optional_metrics_as_nan():
     assert out.loc[0, "roc_auc"] == pytest.approx(0.7)
     assert "brier_score" in out.columns and np.isnan(out.loc[0, "brier_score"])
     assert "ece" in out.columns and np.isnan(out.loc[0, "ece"])
+
+
+def test_subject_summary_preserves_named_region_conditions():
+    rows = []
+    for region, auc in [("left_motor_strip", 0.6), ("right_motor_strip", 0.8)]:
+        for fold in [1, 2]:
+            rows.append({
+                "dataset": "demo", "subject": 1, "pipeline": "riemann_lr",
+                "stressor": "region_dropout", "montage": "all_channels",
+                "dropout_fraction": 0.1, "region": region, "fold": fold, "repeat": 0,
+                "roc_auc": auc, "balanced_accuracy": auc, "brier_score": 0.2,
+                "ece": 0.1, "n_channels": 64, "n_dropped_channels": 6,
+            })
+    summary = subject_level_summary(pd.DataFrame(rows))
+    assert len(summary) == 2
+    assert set(summary["region"]) == {"left_motor_strip", "right_motor_strip"}

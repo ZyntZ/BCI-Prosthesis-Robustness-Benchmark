@@ -14,6 +14,7 @@ SCRIPT_NAMES = [
     "generate_submission_readiness.py",
     "recommend_interventions.py",
     "run_benchmark.py",
+    "refresh_benchmark_summaries.py",
     "validate_results.py",
 ]
 FIGURE_PREFIX = "BNCI2014-001_BNCI2014_001_all_riemann_lr"

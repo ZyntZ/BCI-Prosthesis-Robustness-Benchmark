@@ -2,6 +2,7 @@ PYTHON ?= python
 CONFIG ?= configs/benchmark.yaml
 RESULTS_DIR ?= results
 REPORTS_DIR ?= reports
+PREFIX ?= PhysionetMI_PhysionetMI_all_riemann_lr
 MAX_RETRIES ?= 5
 RETRY_WAIT_SECONDS ?= 60
 SKIP_FAILED ?= 1
@@ -9,7 +10,7 @@ MAX_CONSECUTIVE_FAILURES ?= 5
 SKIP_FAILED_FLAG = $(if $(filter 1 true yes,$(SKIP_FAILED)),--skip-failed,)
 
 
-.PHONY: install-eeg ensure-eeg publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
+.PHONY: refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-dev10 validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full analyze-dev10 recommendations-dev10 final-stats-dev10 all-dev10
 
 install-dev:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -24,6 +25,19 @@ ensure-eeg:
 	}
 	@$(PYTHON) -c "import mne, moabb, pyriemann" >/dev/null 2>&1 || { \
 		echo 'EEG dependency installation failed. Run: $(PYTHON) -m pip install -e ".[eeg]"'; \
+		exit 1; \
+	}
+
+install-reports:
+	$(PYTHON) -m pip install -e ".[reports]"
+
+ensure-reports:
+	@$(PYTHON) -c "import matplotlib, plotly, seaborn" >/dev/null 2>&1 || { \
+		echo "Reporting dependencies are missing; installing the reports extra with $(PYTHON)..."; \
+		$(PYTHON) -m pip install -e ".[reports]"; \
+	}
+	@$(PYTHON) -c "import matplotlib, plotly, seaborn" >/dev/null 2>&1 || { \
+		echo 'Reporting dependency installation failed. Run: $(PYTHON) -m pip install -e ".[reports]"'; \
 		exit 1; \
 	}
 
@@ -52,10 +66,10 @@ bnci-full: ensure-eeg
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --download-and-run --dataset BNCI2014-001 --include-reduced-montage --include-region-dropout --include-cross-session --pipeline csp_lda --suffix BNCI2014_001_all_csp_lda
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --download-and-run --dataset BNCI2014-001 --include-reduced-montage --include-region-dropout --include-cross-session --pipeline riemann_lr --suffix BNCI2014_001_all_riemann_lr
 
-analyze-dev10:
+analyze-dev10: ensure-reports
 	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10
 
-recommendations-dev10:
+recommendations-dev10: ensure-reports
 	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10
 
 final-stats-dev10:
@@ -68,6 +82,41 @@ physionet-full-skip-failed: ensure-eeg
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --download-and-run --dataset PhysionetMI --include-reduced-montage --include-region-dropout --include-cross-session --pipeline csp_lda --max-retries $(MAX_RETRIES) --retry-wait-seconds $(RETRY_WAIT_SECONDS) --skip-failed --max-consecutive-failures $(MAX_CONSECUTIVE_FAILURES) --suffix PhysionetMI_all_csp_lda
 	$(PYTHON) scripts/run_benchmark.py --config $(CONFIG) --download-and-run --dataset PhysionetMI --include-reduced-montage --include-region-dropout --include-cross-session --pipeline riemann_lr --max-retries $(MAX_RETRIES) --retry-wait-seconds $(RETRY_WAIT_SECONDS) --skip-failed --max-consecutive-failures $(MAX_CONSECUTIVE_FAILURES) --suffix PhysionetMI_all_riemann_lr
 
+
+refresh-full-summaries:
+	$(PYTHON) scripts/refresh_benchmark_summaries.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
+
+statistical-report-full:
+	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
+
+postprocess-full: ensure-reports
+	$(PYTHON) scripts/refresh_benchmark_summaries.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
+	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX) --allow-warnings
+	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
+	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
+	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
+	$(PYTHON) scripts/final_statistics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
+
+analyze-full: ensure-reports
+	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
+
+recommendations-full: ensure-reports
+	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
+
+final-stats-full:
+	$(PYTHON) scripts/final_statistics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
+
+all-full: analyze-full recommendations-full final-stats-full
+
+validate-physionet-full:
+	@set -e; found=0; \
+	for prefix in PhysionetMI_PhysionetMI_all_csp_lda PhysionetMI_PhysionetMI_all_riemann_lr; do \
+		if [ -f "$(RESULTS_DIR)/$${prefix}_results.csv" ]; then \
+			found=1; $(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix "$${prefix}" --allow-warnings; \
+		fi; \
+	done; \
+	if [ "$$found" -eq 0 ]; then echo "No full PhysioNet outputs found; skipping optional full-run validation."; fi
+
 validate-dev10:
 	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10 --allow-warnings
 
@@ -75,7 +124,7 @@ validate-bnci:
 	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda --allow-warnings
 	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --allow-warnings
 
-validate-results: validate-dev10 validate-bnci
+validate-results: validate-dev10 validate-bnci validate-physionet-full
 
 statistical-report:
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr

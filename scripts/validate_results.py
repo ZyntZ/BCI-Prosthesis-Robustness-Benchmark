@@ -22,6 +22,7 @@ FOLD_KEY_COLS = KEY_COLS + ["fold", "repeat"]
 # these columns are intentionally absent from subject summaries, where such rows
 # are averaged to subject-condition level.
 OPTIONAL_FOLD_KEY_COLS = ["region", "dropped_channels", "selected_channels", "session_train", "session_test"]
+OPTIONAL_SUBJECT_KEY_COLS = ["region", "session_train", "session_test"]
 METRIC_BOUNDS = {
     "roc_auc": (0.0, 1.0),
     "balanced_accuracy": (0.0, 1.0),
@@ -152,8 +153,12 @@ def validate_subject_summary_against_results(results: pd.DataFrame, subject: pd.
     if not metrics:
         add_issue(rows, "error", "subject_summary_metric_overlap", False, "No overlapping metric columns for cross-check")
         return
-    agg = results.groupby(KEY_COLS, dropna=False)[metrics].mean(numeric_only=True).reset_index()
-    merged = subject[KEY_COLS + metrics].merge(agg, on=KEY_COLS, how="outer", suffixes=("_subject", "_fold_mean"), indicator=True)
+    condition_cols = KEY_COLS + [
+        c for c in OPTIONAL_SUBJECT_KEY_COLS
+        if c in results.columns and c in subject.columns and (results[c].notna().any() or subject[c].notna().any())
+    ]
+    agg = results.groupby(condition_cols, dropna=False)[metrics].mean(numeric_only=True).reset_index()
+    merged = subject[condition_cols + metrics].merge(agg, on=condition_cols, how="outer", suffixes=("_subject", "_fold_mean"), indicator=True)
     missing_pairs = merged["_merge"].ne("both")
     add_issue(
         rows,
@@ -217,7 +222,7 @@ def validate_prefix(results_dir: Path, prefix: str) -> tuple[pd.DataFrame, dict[
         validate_channel_counts(results, rows, "fold_results")
     if not subject.empty:
         validate_metric_ranges(subject, rows, "subject_summary")
-        validate_duplicate_rows(subject, rows, "subject_summary", KEY_COLS)
+        validate_duplicate_rows(subject, rows, "subject_summary", KEY_COLS, OPTIONAL_SUBJECT_KEY_COLS)
         validate_channel_counts(subject, rows, "subject_summary")
         validate_paired_baselines(subject, rows)
     validate_subject_summary_against_results(results, subject, rows)

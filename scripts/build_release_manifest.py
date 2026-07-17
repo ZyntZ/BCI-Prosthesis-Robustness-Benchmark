@@ -22,8 +22,8 @@ DEFAULT_PREFIXES = [
 ]
 METHODS_FIGURE_PREFIXES = ["BNCI2014-001_BNCI2014_001_all_riemann_lr"]
 HASH_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".csv", ".json", ".cff", ".png", ".svg", ".tex"}
-EXCLUDE_PARTS = {".git", "__pycache__", ".pytest_cache", "checkpoints"}
-PACKAGE_NAMES = ["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "pytest", "PyYAML"]
+EXCLUDE_PARTS = {".git", "__pycache__", ".pytest_cache", "checkpoints", ".venv", "venv", "env", ".env", "moabb_data", "mne_data", "data", "dist"}
+PACKAGE_NAMES = ["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "mne", "moabb", "pyriemann", "matplotlib", "plotly", "pytest", "PyYAML"]
 EXPECTED_STAT_OUTPUT_SUFFIXES = [
     "statistical_methods_audit.csv",
     "statistical_paired_effects.csv",
