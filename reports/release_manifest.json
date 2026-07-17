@@ -1,19 +1,19 @@
 {
-  "generated_at_utc": "2026-07-17T10:16:25.017116+00:00",
-  "python": "3.13.7",
-  "platform": "Linux-4.4.0-x86_64-with-glibc2.36",
+  "generated_at_utc": "2026-07-17T13:30:09.130888+00:00",
+  "python": "3.12.1",
+  "platform": "Linux-6.8.0-1052-azure-x86_64-with-glibc2.39",
   "package_versions": {
-    "numpy": "2.4.3",
-    "pandas": "2.3.3",
-    "scipy": "1.17.1",
-    "scikit-learn": "1.8.0",
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "scipy": "1.18.0",
+    "scikit-learn": "1.9.0",
     "statsmodels": "0.14.6",
-    "mne": null,
-    "moabb": null,
-    "pyriemann": null,
-    "matplotlib": "3.10.8",
-    "plotly": "6.6.0",
-    "pytest": "9.0.2",
+    "mne": "1.12.1",
+    "moabb": "1.5.0",
+    "pyriemann": "0.12",
+    "matplotlib": "3.11.0",
+    "plotly": "6.9.0",
+    "pytest": "9.1.1",
     "PyYAML": "6.0.3"
   },
   "prefixes": [
@@ -372,33 +372,33 @@
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.png",
-      "sha256": "30c422e6138ee00f8aa05082764dbb7cc6afaf2da6cb86da477c80160618a35c",
-      "bytes": 62493
+      "sha256": "8248065053de43a4fec35731f48bb71c886c235d0c23a90acfbf8ab3e70e18cc",
+      "bytes": 53181
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_intervention_class_counts.svg",
-      "sha256": "32923e1169c17c31746d71686f0259d14a4f7984bbe3c6a5d0d7bcd0d9860de6",
-      "bytes": 10475
+      "sha256": "fe9ef1f76793bdf4ae2e33efb99350d4728e3e8294eccdccf83a30ce0a1da3da",
+      "bytes": 10471
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.png",
-      "sha256": "31bfe467a1c57c8fb419918f753a756ebd84326817d4aed504b4c8af26e58d80",
-      "bytes": 131953
+      "sha256": "9d8da797578684ca58c72d616d6e454c67054a9b8ee3e2e100ba6f6c47accb12",
+      "bytes": 120708
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_pipeline_schematic.svg",
-      "sha256": "0f5be45e9ac35d877d2f047a314c2f810973403bb18e836b80f437cb6bfc3c32",
-      "bytes": 9916
+      "sha256": "bad7718fcf0d45754330f9adda55ca337c15d0082c7681f8a0175f8c2f7d064e",
+      "bytes": 9915
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.png",
-      "sha256": "8073713b43fcfa0a5b8943ebddf3bb42120b6989d63f86a3a884c7f88f984bbb",
-      "bytes": 100190
+      "sha256": "ae4ab54a30595fc39ec4eee55b83aee2587a41e7f07ea8536f732892bdd1c286",
+      "bytes": 98922
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_methods_robustness_degradation_roc_auc.svg",
-      "sha256": "1cb7f0d562a610fef8863557cc5f710a81781572c8305beb5dac56d37a2a5d6b",
-      "bytes": 16108
+      "sha256": "49d639a22172780fe1bba8e163e4090abb364d4bd98ffe5be0543f342770d7c0",
+      "bytes": 16102
     },
     {
       "path": "reports/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_report_summary.md",
@@ -452,8 +452,8 @@
     },
     {
       "path": "reports/release_manifest.json",
-      "sha256": "dd833c8af33a068f9739119e16e821d64ec7b810b62f6abda60abe2a7a81940c",
-      "bytes": 41935
+      "sha256": "e9be5cd7dc4ab80a67fbe9406466c77782997b6b351ab0ab86ed6aedea90574c",
+      "bytes": 41937
     },
     {
       "path": "reports/submission_readiness_checks.csv",
@@ -462,8 +462,8 @@
     },
     {
       "path": "reports/submission_readiness_summary.json",
-      "sha256": "bc3b1c556ee3c5b9bbcc789178751a91e270a9106d4545f3cd76f1757b086d8a",
-      "bytes": 302
+      "sha256": "835639f7528af291b532c60967070a0e493c8e5eda19563409067e28b24ee20e",
+      "bytes": 386
     },
     {
       "path": "requirements.txt",
@@ -532,13 +532,13 @@
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_channel_dropout_slope_summary.csv",
-      "sha256": "8f855480a9b841efacfa7ab38aecf019fe05b377a2597f1588b72f4d6c91bba0",
-      "bytes": 1046
+      "sha256": "2d1c6793c4b1e2f4971f3d873a1f540a1fb9ed966f864d54c6703dee1f300420",
+      "bytes": 1044
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_channel_dropout_subject_slopes.csv",
-      "sha256": "33f8e9a0401ff6a050a8935277bec0ee915627c3314d32ca8f45b6be027f832d",
-      "bytes": 4966
+      "sha256": "508c3146f8f73defbaf96dbad4b7fbaa64c45dd9723199ed875c05bb0aacd6e0",
+      "bytes": 4974
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_effect_size_interpretation.csv",
@@ -557,8 +557,8 @@
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_paired_effects.csv",
-      "sha256": "9f7d2d8578a0ffa91a549565c7dbe75167d01390c531f03dbd8344d59268b88a",
-      "bytes": 16538
+      "sha256": "a24e578d5ef99afbda56b015b9257aaaf9738dbef7d260b50467119fc2da4cff",
+      "bytes": 16540
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_report_manifest.json",
@@ -567,8 +567,8 @@
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_report_table.csv",
-      "sha256": "8fe18cabbacad421d411fa7a98c6dfe5df4abc481b1b26e309d6999085bbcf04",
-      "bytes": 5213
+      "sha256": "50437fa6567ee2bcbfc00407a7d657958d89185fa5b204707b02b96318902f4e",
+      "bytes": 5215
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_csp_lda_statistical_sensitivity_summary.csv",
@@ -642,13 +642,13 @@
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_channel_dropout_slope_summary.csv",
-      "sha256": "56db35524e2a45ea141af761cf4a75248e5e1eab992d15c1bc069688880a66cc",
-      "bytes": 1053
+      "sha256": "845b09f538f5c71806a55eba6b7eff619c204b423a17fd31df3f2483f4e7cc1e",
+      "bytes": 1054
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_channel_dropout_subject_slopes.csv",
-      "sha256": "b8fc98f5ab5ebea8cca15c63dc01b6607b5d6eacd56f1febda14e4dd641736f1",
-      "bytes": 5104
+      "sha256": "be98a00de8d1441b483e6d43d82a069d1106bb8f6dbd2ba914781bd4512fcca5",
+      "bytes": 5095
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_effect_size_interpretation.csv",
@@ -667,8 +667,8 @@
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_paired_effects.csv",
-      "sha256": "1f4c3fa49d74ddc3d03ed2bda02080d0ffca491bd62967d3299f80eaa45c7643",
-      "bytes": 16581
+      "sha256": "18d5e5901e5d4297aadcfd9feb03455cb88b46bb1adb578d16d9963c3b6d4a3f",
+      "bytes": 16577
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_report_manifest.json",
@@ -677,8 +677,8 @@
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_report_table.csv",
-      "sha256": "6038aee469b1de3161610d93c73b754f1bb41958e86ee9c8ed64e71204ba49c1",
-      "bytes": 5230
+      "sha256": "cd8ef214761be8d7114017b5d18d4880755084e37a4b14fc84a8b73c302dc4ac",
+      "bytes": 5227
     },
     {
       "path": "results/BNCI2014-001_BNCI2014_001_all_riemann_lr_statistical_sensitivity_summary.csv",
@@ -912,13 +912,13 @@
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_channel_dropout_slope_summary.csv",
-      "sha256": "340d8be833e827f6b2adc0f0fadd9191190d949e1f1d5e61c2dd12a30ec3274d",
-      "bytes": 1064
+      "sha256": "9fd0dd87c17deb094c7a3e2226a0f0e5a4c480508828489a0ace5b0c5f79ac90",
+      "bytes": 1067
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_channel_dropout_subject_slopes.csv",
-      "sha256": "070765684a3dc0cca7c4cba629f89c1ad2ec6e3e77610e8bd672a7019ba3033f",
-      "bytes": 5874
+      "sha256": "fc909752b982066b25dce3674e0eb28166a6e504155fc935497ff459bc1b231b",
+      "bytes": 5898
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_effect_size_interpretation.csv",
@@ -937,8 +937,8 @@
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_paired_effects.csv",
-      "sha256": "2bad563bb1eb8b920eacca36167158af2b62c11f8e9ad84e0c411051b520c50f",
-      "bytes": 10390
+      "sha256": "00c0d53d0e76292bba64196e74dfcfb6ce486b1b93f27e326608efc69f724aad",
+      "bytes": 10391
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_report_manifest.json",
@@ -947,8 +947,8 @@
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_report_table.csv",
-      "sha256": "30adfeb7bdf2ef772a02871d7e55b69c98f8ea097afa1d4c993b04151b19651a",
-      "bytes": 3121
+      "sha256": "c5ca3bb4f59a3fe7fa465ed53ff75fbac20be69054d5a29b4a2b7d9fbf0ee549",
+      "bytes": 3123
     },
     {
       "path": "results/PhysionetMI_dev10_statistical_sensitivity_summary.csv",
