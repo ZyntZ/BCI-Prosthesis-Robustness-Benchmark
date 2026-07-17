@@ -44,3 +44,9 @@ def test_manifest_excludes_local_environments_and_raw_data(tmp_path):
     paths = {path.relative_to(root).as_posix() for path in build_release_manifest.iter_manifest_files(root)}
     assert "kept.py" in paths
     assert not any("excluded.py" in path for path in paths)
+
+
+def test_default_release_scope_includes_full_physionet_and_uses_its_figures():
+    full = "PhysionetMI_PhysionetMI_all_riemann_lr"
+    assert full in build_release_manifest.DEFAULT_PREFIXES
+    assert build_release_manifest.METHODS_FIGURE_PREFIXES == [full]

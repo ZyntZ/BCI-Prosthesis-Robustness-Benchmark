@@ -167,9 +167,10 @@ statistical-reports:
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_dev10
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr
+	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr
 
 methods-figures:
-	$(PYTHON) scripts/generate_methods_figures.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --metric roc_auc
+	$(PYTHON) scripts/generate_methods_figures.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr --metric roc_auc
 
 release-manifest: validate-results statistical-reports methods-figures
 	$(PYTHON) scripts/build_release_manifest.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --output $(REPORTS_DIR)/release_manifest.json

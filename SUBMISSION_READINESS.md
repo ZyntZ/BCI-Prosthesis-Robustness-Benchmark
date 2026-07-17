@@ -5,9 +5,9 @@ This file summarizes deterministic repository checks for preparing the benchmark
 ## Status
 
 - Ready for release packaging: `true`
-- Checks run: 59
+- Checks run: 73
 - Failed errors: 0
-- Failed warnings: 0
+- Failed warnings: 1
 
 ## Scope
 
@@ -17,4 +17,4 @@ This file summarizes deterministic repository checks for preparing the benchmark
 
 ## Failed checks
 
-No failed checks.
+- `warning` `analysis_artifacts` `PhysionetMI_PhysionetMI_all_riemann_lr:results.csv`: Fold-level results are unavailable; subject-level artifacts remain releaseable with an explicit provenance limitation

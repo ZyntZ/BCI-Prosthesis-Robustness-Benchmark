@@ -176,7 +176,15 @@ def refresh_summaries(
     raw_path = results_dir / f"{prefix}_results.csv"
     subject_path = results_dir / f"{prefix}_subject_summary.csv"
     population_path = results_dir / f"{prefix}_population_summary.csv"
-    discovered_subject_path, searched_subject_paths = find_subject_summary(results_dir, prefix)
+    # Recovery from local fold files/checkpoints must not be shadowed by an
+    # unrelated sibling checkout. Search nearby summaries only in the explicit
+    # subject-summary fallback mode.
+    if subject_path.exists():
+        discovered_subject_path, searched_subject_paths = subject_path, [subject_path]
+    elif allow_existing_subject_summary:
+        discovered_subject_path, searched_subject_paths = find_subject_summary(results_dir, prefix)
+    else:
+        discovered_subject_path, searched_subject_paths = None, [subject_path]
     if discovered_subject_path is None and allow_existing_subject_summary:
         discovered_subject_path, searched_archives = extract_subject_summary_from_archives(results_dir, prefix)
     else:

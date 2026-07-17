@@ -53,3 +53,12 @@ def test_readme_does_not_instruct_unconditional_csp_postprocessing():
     assert "# or for CSP + LDA:" not in readme
     assert "Run the CSP + LDA command only if" in readme
     assert "make postprocess-physionet-full-available" in readme
+
+
+def test_publication_targets_include_full_physionet_outputs():
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    full = "PhysionetMI_PhysionetMI_all_riemann_lr"
+    statistical_block = makefile.split("statistical-reports:", 1)[1].split("methods-figures:", 1)[0]
+    figures_block = makefile.split("methods-figures:", 1)[1].split("release-manifest:", 1)[0]
+    assert full in statistical_block
+    assert full in figures_block

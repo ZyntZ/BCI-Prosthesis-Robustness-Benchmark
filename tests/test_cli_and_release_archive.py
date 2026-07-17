@@ -17,7 +17,7 @@ SCRIPT_NAMES = [
     "refresh_benchmark_summaries.py",
     "validate_results.py",
 ]
-FIGURE_PREFIX = "BNCI2014-001_BNCI2014_001_all_riemann_lr"
+FIGURE_PREFIX = "PhysionetMI_PhysionetMI_all_riemann_lr"
 
 SPEC_ARCHIVE = importlib.util.spec_from_file_location("build_release_archive", ROOT / "scripts" / "build_release_archive.py")
 build_release_archive = importlib.util.module_from_spec(SPEC_ARCHIVE)

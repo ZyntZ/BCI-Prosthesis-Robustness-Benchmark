@@ -119,3 +119,15 @@ def test_submission_readiness_writes_markdown_status(tmp_path):
     text = output.read_text(encoding="utf-8")
     assert "Ready for release packaging: `true`" in text
     assert "No failed checks." in text
+
+
+def test_full_physionet_is_first_class_and_exact_cohort_size_is_enforced():
+    full = "PhysionetMI_PhysionetMI_all_riemann_lr"
+    assert full in generate_submission_readiness.DEFAULT_PREFIXES
+    assert generate_submission_readiness.EXPECTED_SUBJECT_COUNTS[full] == 109
+    assert generate_submission_readiness.REQUIRED_METHOD_FIGURE_PREFIX == full
+    checks = generate_submission_readiness.build_checks(ROOT, ROOT / "results", ROOT / "reports", [full])
+    count = checks.loc[checks["check"].eq(f"{full}:expected_subject_count")].iloc[0]
+    folds = checks.loc[checks["check"].eq(f"{full}:results.csv")].iloc[0]
+    assert count["passed"] and count["n_subjects"] == 109
+    assert folds["severity"] == "warning" and not folds["passed"]

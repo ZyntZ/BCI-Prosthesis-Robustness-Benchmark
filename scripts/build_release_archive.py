@@ -60,7 +60,7 @@ REQUIRED_FIGURE_SUFFIXES = [
     "methods_intervention_class_counts.svg",
     "methods_figures_manifest.json",
 ]
-DEFAULT_FIGURE_PREFIX = "BNCI2014-001_BNCI2014_001_all_riemann_lr"
+DEFAULT_FIGURE_PREFIX = "PhysionetMI_PhysionetMI_all_riemann_lr"
 RAW_DATA_DIR_NAMES = {"data", "moabb_data", "mne_data"}
 
 

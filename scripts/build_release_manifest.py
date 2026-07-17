@@ -19,8 +19,9 @@ DEFAULT_PREFIXES = [
     "PhysionetMI_dev10",
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_riemann_lr",
 ]
-METHODS_FIGURE_PREFIXES = ["BNCI2014-001_BNCI2014_001_all_riemann_lr"]
+METHODS_FIGURE_PREFIXES = ["PhysionetMI_PhysionetMI_all_riemann_lr"]
 HASH_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".csv", ".json", ".cff", ".png", ".svg", ".tex"}
 EXCLUDE_PARTS = {".git", "__pycache__", ".pytest_cache", "checkpoints", ".venv", "venv", "env", ".env", "moabb_data", "mne_data", "data", "dist"}
 PACKAGE_NAMES = ["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "mne", "moabb", "pyriemann", "matplotlib", "plotly", "pytest", "PyYAML"]

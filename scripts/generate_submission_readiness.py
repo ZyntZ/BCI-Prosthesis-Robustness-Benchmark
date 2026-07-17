@@ -19,11 +19,20 @@ DEFAULT_PREFIXES = [
     "PhysionetMI_dev10",
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_riemann_lr",
 ]
 FULL_RUN_PREFIXES = [
     "BNCI2014-001_BNCI2014_001_all_csp_lda",
     "BNCI2014-001_BNCI2014_001_all_riemann_lr",
+    "PhysionetMI_PhysionetMI_all_riemann_lr",
 ]
+EXPECTED_SUBJECT_COUNTS = {
+    "PhysionetMI_dev10": 10,
+    "BNCI2014-001_BNCI2014_001_all_csp_lda": 9,
+    "BNCI2014-001_BNCI2014_001_all_riemann_lr": 9,
+    "PhysionetMI_PhysionetMI_all_riemann_lr": 109,
+}
+SUBJECT_SUMMARY_ONLY_PREFIXES = {"PhysionetMI_PhysionetMI_all_riemann_lr"}
 REQUIRED_PROJECT_FILES = [
     "README.md",
     "LICENSE",
@@ -52,7 +61,7 @@ REQUIRED_RESULT_SUFFIXES = [
     "statistical_report_table.csv",
     "statistical_report_manifest.json",
 ]
-REQUIRED_METHOD_FIGURE_PREFIX = "BNCI2014-001_BNCI2014_001_all_riemann_lr"
+REQUIRED_METHOD_FIGURE_PREFIX = "PhysionetMI_PhysionetMI_all_riemann_lr"
 REQUIRED_METHOD_FIGURES = [
     "methods_pipeline_schematic.svg",
     "methods_robustness_degradation_roc_auc.svg",
@@ -199,26 +208,30 @@ def build_checks(root: Path, results_dir: Path, reports_dir: Path, prefixes: lis
 
         for suffix in REQUIRED_RESULT_SUFFIXES:
             path = results_dir / f"{prefix}_{suffix}"
+            summary_only_fold_file = prefix in SUBJECT_SUMMARY_ONLY_PREFIXES and suffix == "results.csv"
+            severity = "warning" if summary_only_fold_file else "error"
+            detail = (
+                "Fold-level results are unavailable; subject-level artifacts remain releaseable with an explicit provenance limitation"
+                if summary_only_fold_file and not path.exists()
+                else "Analysis artifact is present" if path.exists() else "Analysis artifact is missing"
+            )
             rows.append(check_row(
-                "analysis_artifacts",
-                f"{prefix}:{suffix}",
-                "error",
-                path.exists(),
-                "Analysis artifact is present" if path.exists() else "Analysis artifact is missing",
-                prefix=prefix,
-                path=rel(path, root),
+                "analysis_artifacts", f"{prefix}:{suffix}", severity, path.exists(), detail,
+                prefix=prefix, path=rel(path, root),
             ))
 
         n_subjects = count_unique_subjects(results_dir / f"{prefix}_subject_summary.csv")
         is_full_run = prefix in FULL_RUN_PREFIXES
+        expected_subjects = EXPECTED_SUBJECT_COUNTS.get(prefix)
+        count_ok = n_subjects is not None and (
+            n_subjects == expected_subjects if expected_subjects is not None else (n_subjects > 1 if is_full_run else n_subjects >= 1)
+        )
         rows.append(check_row(
-            "analysis_scope",
-            f"{prefix}:subject_count_documented",
-            "error" if is_full_run else "warning",
-            n_subjects is not None and (n_subjects > 1 if is_full_run else n_subjects >= 1),
-            "Subject count is documented in subject_summary.csv" if n_subjects is not None else "Could not determine subject count from subject_summary.csv",
-            prefix=prefix,
-            n_subjects=n_subjects,
+            "analysis_scope", f"{prefix}:expected_subject_count",
+            "error" if expected_subjects is not None or is_full_run else "warning", count_ok,
+            f"Expected {expected_subjects} unique subjects; found {n_subjects}" if expected_subjects is not None else (
+                "Subject count is documented in subject_summary.csv" if n_subjects is not None else "Could not determine subject count from subject_summary.csv"
+            ), prefix=prefix, n_subjects=n_subjects, expected_subjects=expected_subjects,
         ))
 
     for suffix in REQUIRED_METHOD_FIGURES:
