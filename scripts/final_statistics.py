@@ -76,21 +76,43 @@ def population_metrics(subj: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
+def condition_label(row: pd.Series) -> str:
+    """Return a stable, analysis-safe label for one benchmark condition."""
+    stressor = str(row["stressor"])
+    if stressor == "clean":
+        return "clean"
+    if stressor == "reduced_montage":
+        return str(row["montage"])
+    fraction = float(row["dropout_fraction"])
+    if stressor == "channel_dropout":
+        return f"dropout_{fraction:g}"
+    # Region names and session IDs are retained when available. Older subject
+    # summaries do not contain them, so dropout fraction remains a deterministic
+    # discriminator for those archived outputs.
+    suffix = []
+    for column in ("region", "session_train", "session_test"):
+        if column in row.index and pd.notna(row[column]):
+            suffix.append(str(row[column]).replace(" ", "_"))
+    suffix.append(f"{fraction:g}")
+    return "_".join([stressor, *suffix])
+
+
 def wide_auc(subj: pd.DataFrame) -> pd.DataFrame:
-    clean = subj[(subj.stressor == "clean") & (subj.montage == "all_channels")][["subject", "roc_auc", "balanced_accuracy"]].rename(columns={"roc_auc": "clean_auc", "balanced_accuracy": "clean_balanced_accuracy"})
-    wide = clean.copy()
-    for frac in sorted(subj.loc[subj.stressor == "channel_dropout", "dropout_fraction"].dropna().unique()):
-        d = subj[(subj.stressor == "channel_dropout") & (subj.dropout_fraction == frac)][["subject", "roc_auc", "balanced_accuracy"]].rename(columns={"roc_auc": f"auc_dropout_{frac:g}", "balanced_accuracy": f"balanced_accuracy_dropout_{frac:g}"})
-        wide = wide.merge(d, on="subject", how="left")
-    for montage in sorted(subj.loc[subj.stressor == "reduced_montage", "montage"].dropna().unique()):
-        d = subj[(subj.stressor == "reduced_montage") & (subj.montage == montage)][["subject", "roc_auc", "balanced_accuracy"]].rename(columns={"roc_auc": f"auc_{montage}", "balanced_accuracy": f"balanced_accuracy_{montage}"})
-        wide = wide.merge(d, on="subject", how="left")
-    return wide
+    """Pivot every stressor condition for paired subject-level inference."""
+    work = subj.copy()
+    work["condition"] = work.apply(condition_label, axis=1)
+    if work.duplicated(["subject", "condition"]).any():
+        duplicates = work.loc[work.duplicated(["subject", "condition"], keep=False), ["subject", "condition"]]
+        raise ValueError(f"Condition labels are not unique within subject: {duplicates.head().to_dict('records')}")
+    auc = work.pivot(index="subject", columns="condition", values="roc_auc").add_prefix("auc_")
+    bal = work.pivot(index="subject", columns="condition", values="balanced_accuracy").add_prefix("balanced_accuracy_")
+    wide = auc.join(bal).reset_index()
+    return wide.rename(columns={"auc_clean": "clean_auc", "balanced_accuracy_clean": "clean_balanced_accuracy"})
 
 
 def paired_sensitivity(wide: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     rows = []
-    cond_cols = [c for c in wide.columns if c.startswith("auc_dropout_") or c.startswith("auc_motor_")]
+    cond_cols = [c for c in wide.columns if c.startswith("auc_") and c != "clean_auc"]
     for col in sorted(cond_cols):
         d = wide[["subject", "clean_auc", col]].dropna()
         if len(d) < 2:
@@ -203,37 +225,60 @@ def intervention_class_rates(classes: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def mixed_effects(subj: pd.DataFrame) -> pd.DataFrame:
-    df = subj.copy()
-    df = df[np.isfinite(df["roc_auc"])].copy()
-    df["severity"] = df["dropout_fraction"].fillna(0.0).astype(float)
-    rows = []
-    # Avoid fitting unsupported over-parameterized models in development subsets.
-    factors = ["stressor", "pipeline", "dataset"]
-    variable = [f for f in factors if df[f].nunique(dropna=True) > 1]
-    formula_terms = [f"C({f})" for f in variable] + ["severity"]
-    formula = "roc_auc ~ " + " + ".join(formula_terms) if formula_terms else "roc_auc ~ 1"
+def _fit_mixed_model(df: pd.DataFrame, model_id: str, formula: str) -> list[dict[str, object]]:
+    """Fit one subject-random-intercept model and return tidy coefficients."""
+    rows: list[dict[str, object]] = []
     try:
-        fit = mixedlm(formula, data=df, groups=df["subject"]).fit(reml=False, method="lbfgs", maxiter=1000, disp=False)
+        fit = mixedlm(formula, data=df, groups=df["subject"]).fit(
+            reml=False, method="lbfgs", maxiter=1000, disp=False
+        )
         conf = fit.conf_int()
         for name, coef in fit.params.items():
             rows.append({
-                "model": formula,
-                "term": name,
+                "model_id": model_id, "model": formula, "term": name,
                 "estimate": float(coef),
                 "ci_low": float(conf.loc[name, 0]) if name in conf.index else np.nan,
                 "ci_high": float(conf.loc[name, 1]) if name in conf.index else np.nan,
                 "p_value": float(fit.pvalues.get(name, np.nan)),
                 "n_subjects": int(df["subject"].nunique()),
-                "n_subject_condition_rows": int(len(df)),
-                "status": "fit",
+                "n_subject_condition_rows": int(len(df)), "status": "fit",
             })
     except Exception as exc:
-        rows.append({"model": formula, "term": np.nan, "estimate": np.nan, "ci_low": np.nan, "ci_high": np.nan, "p_value": np.nan, "n_subjects": int(df["subject"].nunique()), "n_subject_condition_rows": int(len(df)), "status": f"not_fit: {type(exc).__name__}: {exc}"})
+        rows.append({
+            "model_id": model_id, "model": formula, "term": np.nan, "estimate": np.nan,
+            "ci_low": np.nan, "ci_high": np.nan, "p_value": np.nan,
+            "n_subjects": int(df["subject"].nunique()),
+            "n_subject_condition_rows": int(len(df)),
+            "status": f"not_fit: {type(exc).__name__}: {exc}",
+        })
+    return rows
+
+
+def mixed_effects(subj: pd.DataFrame) -> pd.DataFrame:
+    """Fit prespecified condition and channel-dropout dose-response models.
+
+    Treating all non-dropout stressors as severity zero in one model confounds
+    stressor identity with dropout dose. The categorical model estimates each
+    condition against clean; the dose model is restricted to clean and random
+    channel dropout, where ``dropout_fraction`` has a consistent meaning.
+    """
+    df = subj[np.isfinite(subj["roc_auc"])].copy()
+    df["condition"] = df.apply(condition_label, axis=1)
+    rows = _fit_mixed_model(df, "all_conditions", "roc_auc ~ C(condition, Treatment(reference='clean'))")
+
+    dose = df[df["stressor"].isin(["clean", "channel_dropout"])].copy()
+    dose["dropout_fraction"] = dose["dropout_fraction"].astype(float)
+    if dose["dropout_fraction"].nunique() >= 2:
+        rows += _fit_mixed_model(dose, "channel_dropout_dose", "roc_auc ~ dropout_fraction")
+
     out = pd.DataFrame(rows)
-    if "p_value" in out and out["p_value"].notna().any():
-        mask = out["p_value"].notna()
-        out.loc[mask, "p_value_bh_fdr"] = multipletests(out.loc[mask, "p_value"], method="fdr_bh")[1]
+    out["p_value_bh_fdr"] = np.nan
+    for _, idx in out.groupby("model_id").groups.items():
+        idx = list(idx)
+        mask = out.loc[idx, "p_value"].notna() & ~out.loc[idx, "term"].isin(["Intercept", "Group Var"])
+        selected = out.loc[idx].index[mask]
+        if len(selected):
+            out.loc[selected, "p_value_bh_fdr"] = multipletests(out.loc[selected, "p_value"], method="fdr_bh")[1]
     return out
 
 

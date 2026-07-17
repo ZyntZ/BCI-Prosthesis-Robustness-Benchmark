@@ -28,6 +28,7 @@ python -m compileall -q scripts src
 python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_dev10 --reports-dir reports
 python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_dev10
 python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_dev10
+# writes one *_final_mixed_effects.csv containing separate all_conditions and channel_dropout_dose model_id values
 ```
 
 ## Full benchmark runs

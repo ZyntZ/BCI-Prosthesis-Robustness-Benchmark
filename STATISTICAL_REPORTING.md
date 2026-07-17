@@ -52,11 +52,13 @@ These files do not add observations. They summarize existing subject-level resul
 
 ## Statistical conventions
 
-- Stressor comparisons are paired within subject against the clean all-channel baseline.
+- Every available stressor condition is paired within subject against the clean all-channel baseline, including random channel dropout, reduced montages, named-region dropout, and cross-session transfer when present.
 - Mean paired deltas and channel-dropout slopes use Student t confidence intervals.
 - Shapiro-Wilk tests screen normality of paired deltas and slopes when sample size permits.
 - Wilcoxon signed-rank tests are reported as non-parametric sensitivity checks.
-- Benjamini-Hochberg false discovery rate correction is applied across paired p-values.
+- Benjamini-Hochberg false discovery rate correction is applied across all available condition comparisons within each reported test family.
+- `scripts/final_statistics.py` fits two maximum-likelihood mixed-effects models with a subject random intercept: `roc_auc ~ C(condition, Treatment(reference="clean"))` across all conditions, and `roc_auc ~ dropout_fraction` restricted to clean and random channel-dropout rows. Coefficients are reported with 95% Wald confidence intervals and model-wise Benjamini-Hochberg adjusted p-values for non-intercept fixed effects.
+- Mixed-model residual normality, linearity of the dropout dose response, and homoscedasticity remain assumptions to assess from model diagnostics before confirmatory interpretation. Small cohorts can yield boundary variance estimates and require cautious reporting.
 
 ## Commit hygiene
 

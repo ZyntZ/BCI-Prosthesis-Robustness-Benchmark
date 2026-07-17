@@ -222,14 +222,14 @@ For a run prefix such as `PhysionetMI_dev10`, the pipeline writes:
 - `{prefix}_results.csv`: fold/repeat-level benchmark rows.
 - `{prefix}_subject_summary.csv`: one row per subject/condition for inference.
 - `{prefix}_population_summary.csv`: condition-level means and bootstrap confidence intervals.
-- `{prefix}_paired_comparisons.csv` and `{prefix}_final_paired_sensitivity.csv`: paired comparisons against the clean all-channel baseline.
+- `{prefix}_paired_comparisons.csv` and `{prefix}_final_paired_sensitivity.csv`: paired comparisons of every available stressor condition (random dropout, reduced montage, region dropout, and cross-session transfer) against the clean all-channel baseline.
 - `{prefix}_subject_risk_cards.csv`: subject-level robustness flags.
 - `{prefix}_intervention_recommendations.csv`: subject-level deployment recommendations.
 - HTML reports in `reports/` when Plotly is available.
 
 ## Statistical approach
 
-Inference is performed after collapsing fold/repeat outputs to subject-level summaries. Paired stressor-vs-baseline analyses use within-subject differences. The scripts report confidence intervals, Shapiro-Wilk diagnostics for paired differences, paired t-tests, Wilcoxon signed-rank tests, standardized paired effect sizes, and Benjamini-Hochberg false-discovery-rate adjusted p-values where multiple comparisons are evaluated. Mixed-effects models use subject random intercepts for condition-level comparisons.
+Inference is performed after collapsing fold/repeat outputs to subject-level summaries. Paired stressor-vs-baseline analyses use within-subject differences. The scripts report confidence intervals, Shapiro-Wilk diagnostics for paired differences, paired t-tests, Wilcoxon signed-rank tests, standardized paired effect sizes, and Benjamini-Hochberg false-discovery-rate adjusted p-values where multiple comparisons are evaluated. Mixed-effects inference uses subject random intercepts in two prespecified models: an all-condition categorical model against the clean reference and a dose-response model restricted to clean plus random channel-dropout rows. Restricting the continuous dropout term prevents region, montage, and cross-session conditions from being incorrectly encoded as zero-severity dropout.
 
 ## Data and interpretation notes
 
