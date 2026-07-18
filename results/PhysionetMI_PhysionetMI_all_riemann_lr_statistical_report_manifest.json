@@ -2,7 +2,7 @@
   "prefix": "PhysionetMI_PhysionetMI_all_riemann_lr",
   "source_csv": "results/PhysionetMI_PhysionetMI_all_riemann_lr_subject_summary.csv",
   "n_subjects": 109,
-  "n_subject_condition_rows": 981,
+  "n_subject_condition_rows": 1090,
   "outputs": {
     "methods_audit": "results/PhysionetMI_PhysionetMI_all_riemann_lr_statistical_methods_audit.csv",
     "paired_effects": "results/PhysionetMI_PhysionetMI_all_riemann_lr_statistical_paired_effects.csv",
