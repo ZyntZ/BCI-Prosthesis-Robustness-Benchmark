@@ -60,17 +60,6 @@ def metric_label(metric: str) -> str:
     return "ROC AUC" if metric == "roc_auc" else metric.replace("_", " ").title()
 
 
-def load_intervention_classes(results_dir: Path, prefix: str) -> tuple[pd.DataFrame, Path]:
-    for path in [results_dir / f"{prefix}_final_intervention_classes.csv", results_dir / f"{prefix}_subject_risk_cards.csv"]:
-        if path.exists():
-            df = pd.read_csv(path)
-            if "intervention_class" in df.columns:
-                return df, path
-            if "risk_level" in df.columns:
-                out = df.copy(); out["intervention_class"] = out["risk_level"]
-                return out, path
-    raise FileNotFoundError(f"No intervention class or risk-card CSV found for prefix {prefix}")
-
 
 def dropout_table(subj: pd.DataFrame, metric: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     keep = subj[subj["stressor"].isin(["clean", "channel_dropout"])].copy()
@@ -149,33 +138,15 @@ def robustness_degradation_plot(subj: pd.DataFrame, prefix: str, metric: str, re
     return save(fig, reports_dir / f"{prefix}_methods_robustness_degradation_{metric}")
 
 
-def intervention_class_plot(results_dir: Path, prefix: str, reports_dir: Path) -> dict[str, str]:
-    set_style(); classes, source = load_intervention_classes(results_dir, prefix); require_columns(classes, {"subject", "intervention_class"}, source)
-    order = ["A_high", "B_rescue_candidate", "B_fragile", "C_ok_dev", "D_low_clean"]
-    observed = classes["intervention_class"].fillna("missing").value_counts()
-    counts = observed.reindex([x for x in order if x in observed.index]).astype(int)
-    labels = {"A_high": "High dropout risk", "B_rescue_candidate": "Montage rescue candidate", "B_fragile": "Fragile under dropout", "C_ok_dev": "Acceptable in development", "D_low_clean": "Low clean performance", "missing": "Unclassified"}
-    fig, ax = plt.subplots(figsize=(5.2, 3.4), layout="constrained"); y = np.arange(len(counts))
-    ax.barh(y, counts.values, height=0.56, color=BLUE); ax.set_yticks(y, labels=[labels.get(v, v.replace("_", " ").title()) for v in counts.index]); ax.invert_yaxis()
-    ax.set_xlabel("Number of subjects"); ax.set_title("Deployment-risk classification", loc="left", pad=10); ax.grid(axis="x", color="#dddddd", lw=0.5); ax.set_axisbelow(True); ax.spines[["top", "right"]].set_visible(False)
-    max_count = int(counts.max()) if len(counts) else 1; ax.set_xlim(0, max_count * 1.18 + 0.2)
-    for yi, value in zip(y, counts.values): ax.text(value + max_count * 0.025, yi, str(int(value)), va="center", ha="left", fontsize=8)
-    fig.text(0.01, 0.99, "C", ha="left", va="top", weight="bold", fontsize=11)
-    return save(fig, reports_dir / f"{prefix}_methods_intervention_class_counts")
-
 
 def generate_figures(results_dir: Path, reports_dir: Path, prefix: str, metric: str = "roc_auc") -> dict[str, object]:
     reports_dir.mkdir(parents=True, exist_ok=True)
     subj = load_subject_summary(results_dir, prefix)
-    class_source = results_dir / f"{prefix}_final_intervention_classes.csv"
-    if not class_source.exists():
-        class_source = results_dir / f"{prefix}_subject_risk_cards.csv"
     outputs = {
         "pipeline_schematic": pipeline_schematic(subj, prefix, reports_dir),
         "robustness_degradation": robustness_degradation_plot(subj, prefix, metric, reports_dir),
-        "intervention_class_counts": intervention_class_plot(results_dir, prefix, reports_dir),
     }
-    manifest = {"prefix": prefix, "metric": metric, "source_files": [str(results_dir / f"{prefix}_subject_summary.csv"), str(class_source)], "outputs": outputs, "style_note": "Conventional journal figures with fixed layouts, human-readable labels, and restrained color.", "note": "Figures are generated from existing repository CSV outputs only; no synthetic benchmark observations are used."}
+    manifest = {"prefix": prefix, "metric": metric, "source_files": [str(results_dir / f"{prefix}_subject_summary.csv")], "outputs": outputs, "note": "Figures are generated from committed participant-level results."}
     (reports_dir / f"{prefix}_methods_figures_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return manifest
 

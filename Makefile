@@ -1,7 +1,9 @@
 PYTHON ?= python
 CONFIG ?= configs/benchmark.yaml
 RESULTS_DIR ?= results
-REPORTS_DIR ?= reports
+REPORTS_DIR ?= artifacts/generated_reports
+VALIDATION_DIR ?= artifacts/validation
+MANIFEST_DIR ?= artifacts/manifests
 PREFIX ?= PhysionetMI_PhysionetMI_all_riemann_lr
 EXPECTED_SUBJECTS ?= 109
 PHYSIONET_FULL_PREFIXES ?= PhysionetMI_PhysionetMI_all_riemann_lr PhysionetMI_PhysionetMI_all_csp_lda
@@ -12,7 +14,7 @@ MAX_CONSECUTIVE_FAILURES ?= 5
 SKIP_FAILED_FLAG = $(if $(filter 1 true yes,$(SKIP_FAILED)),--skip-failed,)
 
 
-.PHONY: manuscript compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full recommendations-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full
+.PHONY: manuscript compare-physionet-pipelines install-lock  physionet-csp-preflight physionet-csp-full postprocess-physionet-full-available refresh-full-summaries postprocess-full statistical-report-full install-eeg ensure-eeg install-reports ensure-reports validate-physionet-full analyze-full final-stats-full all-full publication-check release-archive archive-audit release-manifest methods-figures statistical-reports validate-bnci validate-results statistical-report physionet-full-skip-failed physionet-full-strict install-dev test compile-check dry-run list-subjects physionet-full bnci-full
 
 install-lock:
 	$(PYTHON) -m pip install -r requirements-lock.txt
@@ -101,13 +103,12 @@ statistical-report-full:
 postprocess-full: ensure-reports
 	$(PYTHON) scripts/refresh_benchmark_summaries.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX) --recover-from-checkpoints --allow-existing-subject-summary --expected-subjects $(EXPECTED_SUBJECTS)
 	@if [ -f "$(RESULTS_DIR)/$(PREFIX)_results.csv" ]; then \
-		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX) --expected-subjects $(EXPECTED_SUBJECTS) --allow-warnings; \
+		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(VALIDATION_DIR) --prefix $(PREFIX) --expected-subjects $(EXPECTED_SUBJECTS) --allow-warnings; \
 	else \
-		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX) --expected-subjects $(EXPECTED_SUBJECTS) --allow-missing-fold-results --allow-warnings; \
+		$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(VALIDATION_DIR) --prefix $(PREFIX) --expected-subjects $(EXPECTED_SUBJECTS) --allow-missing-fold-results --allow-warnings; \
 	fi
 	$(PYTHON) scripts/generate_statistical_report.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
-	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 	$(PYTHON) scripts/final_statistics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
 	$(PYTHON) scripts/mixed_model_diagnostics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
 
@@ -138,12 +139,11 @@ analyze-full: ensure-reports
 	$(PYTHON) scripts/analyze_robustness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 
 recommendations-full: ensure-reports
-	$(PYTHON) scripts/recommend_interventions.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix $(PREFIX)
 
 final-stats-full:
 	$(PYTHON) scripts/final_statistics.py --results-dir $(RESULTS_DIR) --prefix $(PREFIX)
 
-all-full: analyze-full recommendations-full final-stats-full
+all-full: analyze-full final-stats-full
 
 validate-physionet-full:
 	@set -e; found=0; \
@@ -151,17 +151,17 @@ validate-physionet-full:
 		if [ -f "$(RESULTS_DIR)/$${prefix}_subject_summary.csv" ]; then \
 			found=1; \
 			if [ -f "$(RESULTS_DIR)/$${prefix}_results.csv" ]; then \
-				$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix "$${prefix}" --expected-subjects 109 --allow-warnings; \
+				$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(VALIDATION_DIR) --prefix "$${prefix}" --expected-subjects 109 --allow-warnings; \
 			else \
-				$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix "$${prefix}" --expected-subjects 109 --allow-missing-fold-results --allow-warnings; \
+				$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(VALIDATION_DIR) --prefix "$${prefix}" --expected-subjects 109 --allow-missing-fold-results --allow-warnings; \
 			fi; \
 		fi; \
 	done; \
 	if [ "$$found" -eq 0 ]; then echo "No full PhysioNet subject summaries found; skipping optional full-run validation."; fi
 
 validate-bnci:
-	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda --expected-subjects 9 --allow-warnings
-	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --expected-subjects 9 --allow-warnings
+	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(VALIDATION_DIR) --prefix BNCI2014-001_BNCI2014_001_all_csp_lda --expected-subjects 9 --allow-warnings
+	$(PYTHON) scripts/validate_results.py --results-dir $(RESULTS_DIR) --reports-dir $(VALIDATION_DIR) --prefix BNCI2014-001_BNCI2014_001_all_riemann_lr --expected-subjects 9 --allow-warnings
 
 validate-results: validate-bnci validate-physionet-full
 
@@ -185,7 +185,7 @@ methods-figures:
 	$(PYTHON) scripts/generate_methods_figures.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --prefix PhysionetMI_PhysionetMI_all_riemann_lr --metric roc_auc
 
 release-manifest: validate-results statistical-reports mixed-model-diagnostics compare-physionet-pipelines methods-figures
-	$(PYTHON) scripts/build_release_manifest.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --output $(REPORTS_DIR)/release_manifest.json
+	$(PYTHON) scripts/build_release_manifest.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR) --output $(MANIFEST_DIR)/release_manifest.json
 
 submission-readiness: release-manifest
 	$(PYTHON) scripts/generate_submission_readiness.py --results-dir $(RESULTS_DIR) --reports-dir $(REPORTS_DIR)

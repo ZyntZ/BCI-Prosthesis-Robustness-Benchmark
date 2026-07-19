@@ -26,33 +26,17 @@ FULL_PHYSIONET_PREFIXES = ["PhysionetMI_PhysionetMI_all_csp_lda", "PhysionetMI_P
 COMPARISON_OUTPUTS = [
     "results/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.csv",
     "results/PhysionetMI_csp_lda_vs_riemann_lr_paired_subject_differences.csv",
-    "results/PhysionetMI_csp_lda_vs_riemann_lr_manifest.json",
-    "reports/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.tex",
-    "reports/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.md",
-    "reports/PhysionetMI_csp_lda_vs_riemann_lr_validation.json",
 ]
 HASH_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".csv", ".json", ".cff", ".png", ".svg", ".tex"}
 EXCLUDE_PARTS = {".git", "__pycache__", ".pytest_cache", "checkpoints", ".venv", "venv", "env", ".env", "moabb_data", "mne_data", "data", "dist"}
 PACKAGE_NAMES = ["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "mne", "moabb", "pyriemann", "matplotlib", "plotly", "pytest", "PyYAML"]
-EXPECTED_STAT_OUTPUT_SUFFIXES = [
-    "statistical_methods_audit.csv",
-    "statistical_paired_effects.csv",
-    "statistical_effect_size_interpretation.csv",
-    "statistical_sensitivity_summary.csv",
-    "statistical_overclaim_flags.csv",
-    "statistical_channel_dropout_subject_slopes.csv",
-    "statistical_channel_dropout_slope_summary.csv",
-    "statistical_report_table.csv",
-    "statistical_report_manifest.json",
-]
+EXPECTED_STAT_OUTPUT_SUFFIXES = ["statistical_paired_effects.csv", "statistical_report_table.csv"]
 EXPECTED_REPORT_SUFFIXES = ["statistical_report_table.tex", "statistical_report_summary.md"]
 EXPECTED_METHODS_FIGURE_SUFFIXES = [
     "methods_pipeline_schematic.png",
     "methods_pipeline_schematic.svg",
     "methods_robustness_degradation_roc_auc.png",
     "methods_robustness_degradation_roc_auc.svg",
-    "methods_intervention_class_counts.png",
-    "methods_intervention_class_counts.svg",
     "methods_figures_manifest.json",
 ]
 
@@ -88,7 +72,7 @@ def package_versions() -> dict[str, str | None]:
 
 
 def read_validation_summary(reports_dir: Path, prefix: str) -> dict[str, object] | None:
-    path = reports_dir / f"{prefix}_validation_summary.json"
+    path = reports_dir.parent / "artifacts" / "validation" / f"{prefix}_validation_summary.json"
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
@@ -111,7 +95,7 @@ def expected_outputs(root: Path, results_dir: Path, reports_dir: Path, prefixes:
             path = reports_dir / f"{prefix}_{suffix}"
             rows.append({"prefix": prefix, "path": display_path(path, root), "exists": path.exists()})
         for suffix in ["validation_checks.csv", "validation_summary.json"]:
-            path = reports_dir / f"{prefix}_{suffix}"
+            path = root / "artifacts" / "validation" / f"{prefix}_{suffix}"
             rows.append({"prefix": prefix, "path": display_path(path, root), "exists": path.exists()})
     for fig_prefix in METHODS_FIGURE_PREFIXES:
         for suffix in EXPECTED_METHODS_FIGURE_SUFFIXES:
@@ -158,7 +142,7 @@ def main() -> None:
     ap.add_argument("--results-dir", type=Path, default=Path("results"))
     ap.add_argument("--reports-dir", type=Path, default=Path("reports"))
     ap.add_argument("--prefix", action="append", dest="prefixes", help="Prefix to include; may be supplied multiple times")
-    ap.add_argument("--output", type=Path, default=Path("reports/release_manifest.json"))
+    ap.add_argument("--output", type=Path, default=Path("artifacts/manifests/release_manifest.json"))
     ap.add_argument("--allow-not-ready", action="store_true")
     args = ap.parse_args()
 

@@ -89,19 +89,19 @@ def test_submission_readiness_checks_prepared_repository_pass_without_failed_err
     assert {"repository_metadata", "validation_artifacts", "analysis_artifacts", "methods_figures"}.issubset(set(checks["category"]))
 
 
-def test_submission_readiness_detects_missing_generated_analysis_artifacts(tmp_path):
+def test_consistency_checks_detect_missing_canonical_subject_table(tmp_path):
     work = tmp_path / "repo"
     shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", ".pytest_cache", "__pycache__", "*.pyc", "*.pyo", "dist", ".venv", "venv", "env", "moabb_data", "mne_data", "data"))
-    for path in (work / "results").glob("*_statistical_methods_audit.csv"):
-        path.unlink()
+    prefix = generate_submission_readiness.DEFAULT_PREFIXES[0]
+    (work / "results" / f"{prefix}_subject_summary.csv").unlink()
     checks = generate_submission_readiness.build_checks(work, work / "results", work / "reports", generate_submission_readiness.DEFAULT_PREFIXES)
     missing = checks[(checks["category"] == "analysis_artifacts") & (~checks["passed"])]
-    assert not missing.empty
+    assert f"{prefix}:subject_summary.csv" in set(missing["check"])
 
 
 def test_submission_readiness_detects_missing_required_artifact(tmp_path):
     work = prepare_release_ready_tree(ROOT, tmp_path)
-    missing = work / "reports" / "release_manifest.json"
+    missing = work / "artifacts" / "manifests" / "release_manifest.json"
     missing.unlink()
     checks = generate_submission_readiness.build_checks(work, work / "results", work / "reports", generate_submission_readiness.DEFAULT_PREFIXES)
     release_rows = checks[checks["check"] == "release_manifest_ready"]

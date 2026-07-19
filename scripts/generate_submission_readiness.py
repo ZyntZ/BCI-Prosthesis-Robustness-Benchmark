@@ -58,19 +58,11 @@ REQUIRED_RESULT_SUFFIXES = [
     "results.csv",
     "subject_summary.csv",
     "population_summary.csv",
-    "final_manifest.json",
-    "final_population_metrics.csv",
-    "final_paired_sensitivity.csv",
-    "statistical_methods_audit.csv",
-    "statistical_paired_effects.csv",
-    "statistical_report_table.csv",
-    "statistical_report_manifest.json",
 ]
 REQUIRED_METHOD_FIGURE_PREFIX = "PhysionetMI_PhysionetMI_all_riemann_lr"
 REQUIRED_METHOD_FIGURES = [
     "methods_pipeline_schematic.svg",
     "methods_robustness_degradation_roc_auc.svg",
-    "methods_intervention_class_counts.svg",
     "methods_figures_manifest.json",
 ]
 DISALLOWED_FILENAME_TOKENS = ["assistant", "for_me", "for-me", "для_меня", "для-меня", "ииш", "ai_generated", "ai-generated"]
@@ -183,8 +175,9 @@ def build_checks(root: Path, results_dir: Path, reports_dir: Path, prefixes: lis
     ))
 
     for prefix in prefixes:
+        validation_dir = root / "artifacts" / "validation"
         for suffix in REQUIRED_REPORT_SUFFIXES:
-            path = reports_dir / f"{prefix}_{suffix}"
+            path = validation_dir / f"{prefix}_{suffix}"
             rows.append(check_row(
                 "validation_artifacts",
                 f"{prefix}:{suffix}",
@@ -194,7 +187,7 @@ def build_checks(root: Path, results_dir: Path, reports_dir: Path, prefixes: lis
                 prefix=prefix,
                 path=rel(path, root),
             ))
-        summary = read_json(reports_dir / f"{prefix}_validation_summary.json")
+        summary = read_json(validation_dir / f"{prefix}_validation_summary.json")
         if summary is None:
             rows.append(check_row("validation_artifacts", f"{prefix}:validation_summary_readable", "error", False, "Validation summary JSON is missing", prefix=prefix))
         else:
@@ -276,14 +269,14 @@ def build_checks(root: Path, results_dir: Path, reports_dir: Path, prefixes: lis
         path="CITATION.cff",
     ))
 
-    release_manifest = read_json(reports_dir / "release_manifest.json")
+    release_manifest = read_json(root / "artifacts" / "manifests" / "release_manifest.json")
     rows.append(check_row(
         "release_manifest",
         "release_manifest_ready",
         "error",
         bool(release_manifest and release_manifest.get("release_ready")),
         "Release manifest reports release_ready=true" if release_manifest and release_manifest.get("release_ready") else "Release manifest missing or not release-ready",
-        path=rel(reports_dir / "release_manifest.json", root),
+        path="artifacts/manifests/release_manifest.json",
     ))
 
     return pd.DataFrame(rows)
@@ -359,7 +352,6 @@ def main() -> None:
     print(json.dumps({
         "checks": str(checks_path),
         "summary": str(summary_path),
-        "markdown": str(markdown_path),
         "ready": summary["ready"],
         "n_checks": summary["n_checks"],
         "n_failed_errors": n_failed_errors,

@@ -54,7 +54,6 @@ REQUIRED_FILES = [
     "README.md",
     "REPRODUCIBILITY.md",
     "STATISTICAL_REPORTING.md",
-    "SUBMISSION_READINESS.md",
     "manuscript/manuscript.tex",
     "manuscript/manuscript.pdf",
     "manuscript/highlights.txt",
@@ -65,17 +64,13 @@ REQUIRED_FILES = [
     "scripts/build_release_manifest.py",
     "scripts/build_release_archive.py",
     "scripts/generate_submission_readiness.py",
-    "reports/release_manifest.json",
-    "reports/submission_readiness_checks.csv",
-    "reports/submission_readiness_summary.json",
+    "artifacts/manifests/release_manifest.json",
 ]
 REQUIRED_FIGURE_SUFFIXES = [
     "methods_pipeline_schematic.png",
     "methods_pipeline_schematic.svg",
     "methods_robustness_degradation_roc_auc.png",
     "methods_robustness_degradation_roc_auc.svg",
-    "methods_intervention_class_counts.png",
-    "methods_intervention_class_counts.svg",
     "methods_figures_manifest.json",
 ]
 DEFAULT_FIGURE_PREFIX = "PhysionetMI_PhysionetMI_all_riemann_lr"
@@ -106,7 +101,7 @@ def archive_members(root: Path) -> list[Path]:
 
 def audit_release(root: Path, figure_prefix: str = DEFAULT_FIGURE_PREFIX) -> dict[str, object]:
     required = [root / p for p in REQUIRED_FILES]
-    required.extend(root / "reports" / f"{figure_prefix}_{suffix}" for suffix in REQUIRED_FIGURE_SUFFIXES)
+    required.extend(root / "artifacts" / "generated_reports" / f"{figure_prefix}_{suffix}" for suffix in REQUIRED_FIGURE_SUFFIXES)
     missing = [str(p.relative_to(root)) for p in required if not p.exists()]
     bad_names = []
     for p in archive_members(root):
