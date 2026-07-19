@@ -1,281 +1,141 @@
-# BCI Prosthesis Robustness Benchmark
+# Motor-Imagery EEG Channel-Loss Benchmark
 
-A reproducible benchmark for motor-imagery EEG decoders under deployment stressors relevant to BCI-controlled prostheses: test-time channel dropout, reduced electrode montages, spatially clustered motor-channel dropout, and cross-session shift.
+This repository evaluates common spatial patterns with linear discriminant analysis (CSP–LDA) and Riemannian tangent-space logistic regression on two public motor-imagery EEG datasets: PhysioNet EEG Motor Movement/Imagery and BNCI2014-001.
 
-The project uses open EEG datasets available through MOABB and MNE. The benchmark reports subject-level outcomes, uncertainty estimates, paired stressor-vs-baseline comparisons, calibration metrics when probabilities are available, and subject-level intervention recommendations.
+The experiments compare:
 
+- intact test data;
+- test-time zeroing of randomly selected channels;
+- zeroing of predefined motor-region channels;
+- retraining and evaluation on 3- and 9-channel montages;
+- first-session to later-session transfer where session metadata permit it.
 
-## Quality checks
+Channel zeroing is a controlled perturbation, not a complete model of physical electrode failure. Results describe offline binary classification in public datasets, mostly from healthy participants. They are not evidence about online or clinical prosthesis control.
 
-The repository is installable as a `src/`-layout Python package and includes lightweight tests for core array utilities, summary-schema stability, and intervention-class rules.
+## Reproduce
 
 ```bash
-# Core and development tests; EEG integration tests skip if MNE is unavailable
-python -m pip install -e ".[dev]"
-python -m compileall -q scripts src
-python -m pytest
-
-# Full test suite, including EEG integration tests
-python -m pip install -e ".[dev,eeg,reports]"
-python -m pytest
+python -m pip install -r requirements-lock.txt
+python -m pip install -e . --no-deps
+make validate-results
+make compare-physionet-pipelines
 ```
 
-## Included components
+A complete rerun that downloads raw EEG requires the optional EEG dependencies and substantially more time:
 
-- Benchmark runner for MOABB datasets: `scripts/run_benchmark.py`.
-- CSP+LDA and optional Riemannian tangent-space logistic regression baselines.
-- Stress tests for random channel dropout, named motor-region dropout, reduced motor montages, and cross-session evaluation when session metadata permit it.
-- Post-processing scripts for robustness summaries, failure rates, paired statistics, mixed-effects models, and recommendation cards.
-- Example result tables and figures for PhysioNetMI development runs and BNCI2014-001 full-subject runs.
-
-## Repository layout
-
-```text
-configs/                 Benchmark configuration
-scripts/                 Command-line entry points
-src/bci_robustness/      Core evaluation and summary utilities
-results/                 Example benchmark outputs and derived statistics
-reports/                 Figures and HTML reports generated from results
-DATA_PROVENANCE.md       Dataset/result provenance notes
-REPRODUCIBILITY.md       Commands for reproducing analyses
+```bash
+python -m pip install -e ".[eeg]"
+make bnci-full
+make physionet-full
 ```
+
+## Main outputs
+
+- `results/subject_level/`: one row per participant and condition, used for inference.
+- `results/comparisons/PhysionetMI_csp_vs_riemann.csv`: paired decoder contrasts.
+- `results/fold_level/`: fold/repeat measurements compressed as CSV gzip files.
+
+Generated consistency checks are stored under `artifacts/validation/`. They test schemas, ranges, keys, and fold-to-participant aggregation; they do not establish scientific validity.
+
+## Scope and limitations
+
+The primary outcome is receiver operating characteristic area under the curve (ROC-AUC). Balanced accuracy is secondary. Brier score and expected calibration error are reported when probability estimates are available. Population inference uses participants, not folds or dropout repeats, as independent units.
+
+The study evaluates two classical pipelines and two public datasets. It does not test deep networks, asynchronous control, adaptive recalibration, participants with motor impairment, or physical electrode faults. Cross-session estimates are available only for the nine BNCI2014-001 participants.
+
+For the 9-channel montage, the estimated mean changes from the full montage were 0.014 ROC-AUC for CSP–LDA (95% CI −0.013 to 0.040) and 0.001 for Riemann–LR (95% CI −0.027 to 0.030). No equivalence or non-inferiority margin was specified, so these estimates must not be described as proof of preserved performance.
+
+## Design choices
+
+| Decision | Rationale | Sensitivity analysis | Limitation |
+|---|---|---|---|
+| Zero selected test channels | Reproducible corruption with known severity | Regional and random channel sets | Does not represent noise, bridging, clipping, or interpolation |
+| Five-fold within-participant cross-validation | Estimates participant-specific decoding | Paired nonparametric tests at participant level | Split-seed sensitivity is not quantified |
+| 8–32 Hz band | Covers the conventional mu and beta motor-imagery range | None in this release | Other bands and filter banks may change rankings |
+| Six CSP components | Fixed conventional baseline; not selected on reported test folds | Components are capped by montage size | May not be optimal for every participant or montage |
+| OAS covariance | Stabilizes covariance estimates with limited trials | None in this release | Introduces a method-specific regularization choice |
+| Dropout fractions 0.1, 0.2, 0.3, 0.5 | Spans mild to severe channel loss without treating fractions as continuous | Nonlinear diagnostics included | Does not locate a failure threshold |
+| Ten dropout repeats | Averages random channel-set variability at manageable runtime | Subject-level inference collapses repeats | Monte Carlo sensitivity was not separately quantified |
+| ROC-AUC primary | Threshold-independent discrimination for the binary task | Balanced accuracy and calibration metrics | Does not measure online control utility |
+
+Choices labelled “none in this release” are limitations, not evidence that the result is insensitive to that decision.
 
 ## Installation
 
-Conda:
+The locked environment targets CPython 3.11 on Linux:
 
 ```bash
-conda env create -f environment.yml
-conda activate bci-robustness-benchmark
-```
-
-Pip:
-
-```bash
-python -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -r requirements-lock.txt
 python -m pip install -e . --no-deps
 ```
 
-The benchmark downloads EEG data through MOABB/MNE when `--download-and-run` is used. Set `moabb_data_dir` in `configs/benchmark.yaml` if the data cache should live outside the repository.
+For development and tests:
 
-## Quick checks
+```bash
+python -m pip install -e ".[dev]"
+python -m compileall -q scripts src
+python -m pytest
+```
+
+## Quick smoke test
 
 ```bash
 python scripts/run_benchmark.py --config configs/benchmark.yaml --dry-run
 python scripts/run_benchmark.py --config configs/benchmark.yaml --dataset PhysionetMI --list-subjects
 ```
 
-
-## Long-run resume and transient download failures
-
-Full MOABB/PhysioNet runs are subject-level resumable. Completed subjects are stored in `results/checkpoints/` and are reused on the next run unless `--overwrite` is supplied.
-
-For transient network failures, the runner retries each subject before failing:
-
-```bash
-python scripts/run_benchmark.py --config configs/benchmark.yaml --download-and-run --dataset PhysionetMI --subjects 29 --include-reduced-montage --include-region-dropout --pipeline csp_lda --max-retries 5 --retry-wait-seconds 60
-```
-
-To continue past subjects that still fail after all retries, add `--skip-failed`. The runner writes `results/{dataset}_{suffix}_failed_subjects.csv` and `.json`. Treat skipped-subject outputs as incomplete until the failed subjects are rerun successfully.
-
-If a checkpoint was created before optional stressors were requested, the runner now detects the missing stressor rows and recomputes that subject instead of silently reusing an incompatible checkpoint.
-
-## Running benchmarks
-
-Development run on selected PhysioNetMI subjects:
-
-```bash
-python scripts/run_benchmark.py   --config configs/benchmark.yaml   --download-and-run   --dataset PhysionetMI   --subjects 1 2 3 4 5 6 7 8 9 10   --include-reduced-montage   --pipeline csp_lda   --suffix dev10
-```
-
-Full BNCI2014-001 runs:
+## Full benchmark
 
 ```bash
 make bnci-full
-```
-
-Full PhysioNetMI runs:
-
-```bash
 make physionet-full
 ```
 
-These commands may take substantial time because MOABB downloads and processes raw EEG data.
+Long runs save compatible participant checkpoints and reuse them when the same command is restarted. Retry, checkpoint, and recovery details are documented in `REPRODUCIBILITY.md`.
 
-
-
-## Running the full EEG benchmark
-
-The full PhysioNet and BNCI targets require the optional EEG stack. `make physionet-full` now checks the same Python interpreter selected by `PYTHON` and installs the `eeg` extra automatically when `mne`, `moabb`, or `pyriemann` is missing:
-
-```bash
-make physionet-full
-```
-
-To install it explicitly first:
-
-```bash
-make install-eeg
-# equivalent: python -m pip install -e ".[eeg]"
-```
-
-Existing files under `moabb_data/` and completed subject checkpoints under `results/checkpoints/` are reused. Installing the Python packages does not delete or restart the 108 already downloaded subject files. Use `PYTHON=/path/to/python make physionet-full` if the project runs in a specific virtual environment.
-
-
-### PhysioNet CSP + LDA preflight and full run
-
-Run one real subject through every requested CSP + LDA stressor before committing to the 109-subject computation:
-
-```bash
-make physionet-csp-preflight
-```
-
-The preflight uses subject 1, including random channel dropout, the 3- and 9-channel reduced montages, named motor-region dropout, and cross-session evaluation when the dataset metadata permit it. Its subject checkpoint is stored under `results/checkpoints/` and is reused by the full run.
-
-After the preflight succeeds, run only the missing full CSP + LDA experiment without repeating the completed Riemannian pipeline:
-
-```bash
-make physionet-csp-full
-```
-
-The run is resumable at subject level. Re-running the same command reuses compatible checkpoints. Do not use `--overwrite` unless the existing checkpoints are known to be invalid. A complete run must contain 109 unique subjects before post-processing:
-
-```bash
-make postprocess-full PREFIX=PhysionetMI_PhysionetMI_all_csp_lda EXPECTED_SUBJECTS=109
-```
-
-Interrupted checkpoint and final CSV writes use temporary files followed by an atomic rename, reducing the risk of truncated outputs. Raw EEG caches and checkpoints are excluded from release archives.
-
-## Submission-readiness check
-
-For a methods-journal submission package, run the repository-level readiness gate after validation, statistical tables, and methods figures have been regenerated:
-
-```bash
-make publication-check
-make release-archive
-```
-
-The readiness gate writes `SUBMISSION_READINESS.md`, `reports/submission_readiness_checks.csv`, and `reports/submission_readiness_summary.json`. These files check metadata, provenance, reproducibility, validation artifacts, statistical-report artifacts, methods figures, release manifest status, filename hygiene, and absence of raw EEG/data-cache directories. They are derived from repository files only and do not create or modify benchmark observations.
-
-## Statistical reporting
-
-Before using result tables for manuscript statistics, run the deterministic CSV validation checks. These checks verify required schemas, metric ranges, duplicate evaluation keys, channel-count/dropout consistency, clean-baseline pairing, and agreement between fold-level results and subject-level summaries:
-
-```bash
-python scripts/validate_results.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_csp_lda --allow-warnings
-make validate-results
-```
-
-For completed runs, generate methods-audit tables, paired subject-level effects, channel-dropout slopes, and compact CSV/LaTeX result tables:
-
-```bash
-python scripts/generate_statistical_report.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_riemann_lr
-```
-
-See `STATISTICAL_REPORTING.md` for output definitions and statistical conventions. Compare the two complete PhysioNet decoders with `make compare-physionet-pipelines`; positive reported differences are CSP-LDA minus Riemann-LR.
-
-
-## Completed full-run post-processing
-
-After `make physionet-full` completes, process and validate a full result prefix with one command. The target installs the reporting extra when Plotly is missing, rebuilds subject/population summaries from the existing fold-level CSV, validates them, generates statistical reports and HTML outputs, and runs final statistics:
-
-Choose only a pipeline that actually completed. Your completed run is Riemannian logistic regression:
-
-```bash
-make postprocess-full PREFIX=PhysionetMI_PhysionetMI_all_riemann_lr
-```
-
-Run the CSP + LDA command only if that separate full benchmark also completed and its outputs exist. To process every available full PhysioNet pipeline while safely skipping absent ones, use:
+To process completed full PhysioNet outputs without refitting models:
 
 ```bash
 make postprocess-physionet-full-available
 ```
 
-This does not reload EEG or rerun model fitting. The command uses the best available source in this order: the full `*_results.csv`; all 109 subject checkpoints; or an existing `*_subject_summary.csv` containing 109 unique subjects. The last mode can generate statistical and HTML reports but cannot repeat fold-level validation, because the fold rows are unavailable. Rebuilding from fold results or checkpoints preserves named region-dropout and cross-session condition identifiers.
-
-## Post-processing
+## Reproduce tables and checks
 
 ```bash
-python scripts/analyze_robustness.py --results-dir results --prefix PhysionetMI_PhysionetMI_all_csp_lda --reports-dir reports
-python scripts/recommend_interventions.py --results-dir results --reports-dir reports --prefix PhysionetMI_PhysionetMI_all_csp_lda
-python scripts/final_statistics.py --results-dir results --prefix PhysionetMI_PhysionetMI_all_csp_lda
-```
-
-Convenience target:
-
-```bash
-make all-full PREFIX=PhysionetMI_PhysionetMI_all_csp_lda
-```
-
-
-
-## Publication readiness gate
-
-This release includes repository metadata and a reproducibility gate intended for methods-review workflows:
-
-```bash
-make publication-check
-```
-
-The gate compiles scripts, runs unit tests, validates included reference result tables, regenerates statistical reporting packs, and writes `reports/release_manifest.json` with file hashes, selected package versions, validation summaries, and expected-output checks.
-
-Repository metadata included for commit readiness:
-
-- `LICENSE`: BSD-3-Clause license text matching `pyproject.toml`.
-- `CITATION.cff`: software citation metadata with author, affiliation, contact email, and ORCID.
-- `.github/workflows/ci.yml`: continuous-integration workflow for compile, tests, validation, and manifest generation.
-- `manuscript/`: Journal of Neuroscience Methods manuscript source, compiled PDF, verified references, figures, highlights, and cover letter.
-
-
-
-## Methods-paper figures
-
-Generate the three included methods figures directly from existing CSV outputs:
-
-```bash
+make validate-results
+make statistical-reports
+make compare-physionet-pipelines
 make methods-figures
 ```
 
-The target writes PNG and SVG versions of:
+Statistical definitions and multiplicity corrections are documented in `STATISTICAL_REPORTING.md`. Dataset access, licenses, and the limits of the available acquisition-level ethics records are documented in `DATA_PROVENANCE.md`.
 
-- `reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_pipeline_schematic.*`
-- `reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_robustness_degradation_roc_auc.*`
-- `reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_intervention_class_counts.*`
+## Repository layout
 
-The figure manifest is `reports/PhysionetMI_PhysionetMI_all_riemann_lr_methods_figures_manifest.json`. Figures are generated only from repository CSV outputs; no synthetic benchmark observations are created.
+```text
+configs/                 benchmark parameters
+src/bci_robustness/      evaluation and summary functions
+scripts/                 command-line analyses
+results/subject_level/   canonical participant-condition tables
+results/fold_level/      compressed fold/repeat tables
+results/comparisons/     cross-pipeline contrasts
+artifacts/validation/    generated consistency checks
+artifacts/manifests/     file inventories and hashes
+manuscript/              article source, figures, and cover letter
+tests/                   unit and integration tests
+```
 
-## Main outputs
+## Data provenance
 
-For a run prefix such as `PhysionetMI_PhysionetMI_all_csp_lda`, the pipeline writes:
+Raw EEG is not redistributed. PhysioNet EEGMMIDB is available under ODC-By 1.0; BNCI2014-001 is available under CC BY-ND 4.0. Reproduction downloads the data through MOABB/MNE and remains subject to the provider terms. See `DATA_PROVENANCE.md` for dataset identifiers and attribution.
 
-- `{prefix}_results.csv`: fold/repeat-level benchmark rows.
-- `{prefix}_subject_summary.csv`: one row per subject/condition for inference.
-- `{prefix}_population_summary.csv`: condition-level means and bootstrap confidence intervals.
-- `{prefix}_paired_comparisons.csv` and `{prefix}_final_paired_sensitivity.csv`: paired comparisons of every available stressor condition (random dropout, reduced montage, region dropout, and cross-session transfer) against the clean all-channel baseline.
-- `{prefix}_subject_risk_cards.csv`: subject-level robustness flags.
-- `{prefix}_intervention_recommendations.csv`: subject-level deployment recommendations.
-- HTML reports in `reports/` when Plotly is available.
+## Citation
 
-## Statistical approach
+Software citation metadata are in `CITATION.cff`. Cite the original dataset and method publications listed in the manuscript when reusing results.
 
-Inference is performed after collapsing fold/repeat outputs to subject-level summaries. Paired stressor-vs-baseline analyses use within-subject differences. The scripts report confidence intervals, Shapiro-Wilk diagnostics for paired differences, paired t-tests, Wilcoxon signed-rank tests, standardized paired effect sizes, and Benjamini-Hochberg false-discovery-rate adjusted p-values where multiple comparisons are evaluated. Mixed-effects inference uses subject random intercepts in two prespecified models: an all-condition categorical model against the clean reference and a dose-response model restricted to clean plus random channel-dropout rows. Restricting the continuous dropout term prevents region, montage, and cross-session conditions from being incorrectly encoded as zero-severity dropout.
+## License
 
-## Data and interpretation notes
-
-- Example outputs in `results/` are benchmark artifacts produced from MOABB/MNE-accessible datasets and should be regenerated for final analyses.
-- PhysioNetMI `dev10` outputs are a development subset and should not be interpreted as final population estimates.
-- BNCI2014-001 outputs cover subjects 1-9 for the included CSP+LDA and Riemannian baseline runs.
-- Metrics based on predicted probabilities, such as Brier score and expected calibration error, are available only when the fitted pipeline exposes usable probability estimates.
-- Raw EEG downloads are intentionally not included in this repository.
-- One-off pilot outputs not used by the current validation/release manifest are intentionally excluded from the cleaned paper-start archive.
-
-## Technical status
-
-This repository snapshot contains the benchmark code, validated outputs, reproducible environment, and a journal-oriented manuscript package.
-
-
-## Release archive audit
-
-Run `make release-archive` to audit required metadata, validation outputs, statistical reports, methods figures, and filename hygiene before writing `dist/JNM_clean_paper_start.zip`. The audit excludes caches, bytecode, raw-data-like directories, and local temporary files.
+Benchmark code is distributed under the BSD 3-Clause License. Dataset licenses apply separately to the source EEG data.

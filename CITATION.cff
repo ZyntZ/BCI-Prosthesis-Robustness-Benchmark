@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this benchmark, cite the archived release and the source datasets referenced in DATA_PROVENANCE.md."
-title: "BCI Prosthesis Robustness Benchmark"
+title: "Motor-Imagery EEG Channel-Loss Benchmark"
 version: "0.2.3"
 date-released: "2026-07-18"
 license: "BSD-3-Clause"
@@ -12,7 +12,7 @@ authors:
     affiliation: "Southern Federal University"
     email: "ansokolova@sfedu.ru"
 repository-code: "https://github.com/ZyntZ/BCI-Prosthesis-Robustness-Benchmark"
-abstract: "A reproducible benchmark for motor-imagery EEG decoders under deployment-relevant stressors, with subject-level statistical reporting and validation checks."
+abstract: "Benchmark code and participant-level results for two motor-imagery EEG decoding pipelines under simulated channel loss and reduced electrode montages."
 keywords:
   - EEG
   - brain-computer interface

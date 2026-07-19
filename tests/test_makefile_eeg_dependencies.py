@@ -49,10 +49,10 @@ def test_available_full_postprocess_target_skips_absent_pipeline():
     assert "postprocess-physionet-full-available" in phony
 
 
-def test_readme_does_not_instruct_unconditional_csp_postprocessing():
+def test_readme_uses_available_pipeline_postprocessing_target():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "# or for CSP + LDA:" not in readme
-    assert "Run the CSP + LDA command only if" in readme
+    assert "make postprocess-physionet-full-available" in readme
     assert "make postprocess-physionet-full-available" in readme
 
 

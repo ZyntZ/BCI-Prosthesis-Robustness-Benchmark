@@ -1,12 +1,12 @@
 Dear Editors,
 
-Please consider the manuscript “Stress-testing motor-imagery EEG decoders under channel loss and reduced montages: a reproducible benchmark of CSP–LDA and Riemannian logistic regression” for publication in the Journal of Neuroscience Methods.
+Please consider the manuscript “Motor-imagery EEG decoding under simulated channel loss and reduced montages” for publication in the Journal of Neuroscience Methods.
 
-The manuscript presents a reproducible evaluation method for deployment-relevant perturbations in motor-imagery EEG decoding. Two established pipelines were evaluated with participant-level inference on 109 PhysioNet participants and a nine-participant BNCI2014-001 sensitivity cohort. The benchmark separates random test-time channel failure from planned reduced-montage retraining and includes spatial dropout, paired decoder comparisons, false-discovery-rate correction, provenance checks, and mixed-model diagnostics.
+The study asks whether clean-recording performance describes decoder behavior after controlled channel perturbations. CSP–LDA and Riemannian tangent-space logistic regression were evaluated with participant-level inference in 109 PhysioNet participants and a nine-participant BNCI2014-001 sensitivity cohort. The analysis separates test-time channel zeroing from retraining on predefined smaller montages.
 
-The main methodological result is that clean-data performance did not fully determine performance under sensor loss. Riemannian logistic regression retained higher ROC-AUC than CSP–LDA across four random-dropout levels, whereas a planned nine-channel motor montage retained full-montage performance for both methods. The code release includes pinned dependencies and machine-readable validation artifacts.
+Riemann–LR had higher absolute ROC-AUC in the tested random-dropout conditions. Estimates for the nine-channel montage were close to full-montage estimates, but equivalence was not tested. The repository provides the analysis code, participant-level tables, and commands needed to reproduce the reported comparisons. The work is a secondary analysis of public de-identified data, was completed by one author, and received no external funding.
 
-This work is a secondary analysis of public, de-identified datasets and recruited no new participants. The work was completed by one author and received no external funding. A permanent software DOI and competing-interest declaration must be confirmed before this letter is submitted.
+The manuscript is original, is not under consideration elsewhere, and all reported analyses are attributable to the author. Code and derived results are available at https://github.com/ZyntZ/BCI-Prosthesis-Robustness-Benchmark.
 
 Sincerely,
 
