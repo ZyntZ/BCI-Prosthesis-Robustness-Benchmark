@@ -78,8 +78,9 @@ def test_refresh_summaries_recovers_missing_results_from_complete_checkpoints(tm
             "stressor": "clean", "montage": "all_channels", "dropout_fraction": 0.0,
             "fold": 1, "repeat": 0, "roc_auc": 0.7, "balanced_accuracy": 0.6,
             "brier_score": 0.2, "ece": 0.1, "n_channels": 64, "n_dropped_channels": 0,
+            "protocol_version": "0.3.1",
         }])
-        frame.to_csv(checkpoint_dir / f"PhysionetMI_riemann_lr_subject-{subject:03d}_robustness.csv", index=False)
+        frame.to_csv(checkpoint_dir / f"PhysionetMI_riemann_lr_PhysionetMI_all_riemann_lr_subject-{subject:03d}.csv", index=False)
 
     result = module.refresh_summaries(
         tmp_path, prefix, recover_from_checkpoints=True, expected_subjects=2
@@ -106,8 +107,8 @@ def test_checkpoint_recovery_refuses_incomplete_subject_set(tmp_path):
         "dataset": "PhysionetMotorImagery", "subject": 1, "pipeline": "riemann_lr",
         "stressor": "clean", "montage": "all_channels", "dropout_fraction": 0.0,
         "fold": 1, "repeat": 0, "roc_auc": 0.7, "balanced_accuracy": 0.6,
-        "n_channels": 64, "n_dropped_channels": 0,
-    }]).to_csv(checkpoint_dir / "PhysionetMI_riemann_lr_subject-001_robustness.csv", index=False)
+        "n_channels": 64, "n_dropped_channels": 0, "protocol_version": "0.3.1",
+    }]).to_csv(checkpoint_dir / "PhysionetMI_riemann_lr_PhysionetMI_all_riemann_lr_subject-001.csv", index=False)
     with pytest.raises(RuntimeError, match="Found 1 unique subject checkpoints, expected 2"):
         module.refresh_summaries(
             tmp_path,
@@ -255,3 +256,24 @@ def test_atomic_write_csv_replaces_file_without_leaving_temporary(tmp_path):
     module.atomic_write_csv(pd.DataFrame({"value": [3]}), target)
     assert pd.read_csv(target)["value"].tolist() == [3]
     assert not target.with_suffix(".csv.tmp").exists()
+
+
+def test_checkpoint_compatibility_rejects_unversioned_rows():
+    module = load_run_benchmark_module()
+    import pandas as pd
+    frame = pd.DataFrame({"stressor": ["clean", "channel_dropout"]})
+    ok, reason = module.checkpoint_is_compatible(frame, False, False, False)
+    assert not ok
+    assert "protocol_version" in reason
+
+
+def test_checkpoint_compatibility_accepts_current_protocol():
+    module = load_run_benchmark_module()
+    import pandas as pd
+    frame = pd.DataFrame({
+        "stressor": ["clean", "channel_dropout"],
+        "protocol_version": [module.BENCHMARK_PROTOCOL_VERSION] * 2,
+    })
+    ok, reason = module.checkpoint_is_compatible(frame, False, False, False)
+    assert ok
+    assert reason == "ok"

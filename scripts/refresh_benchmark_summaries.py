@@ -13,7 +13,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from bci_robustness.core import population_summary, subject_level_summary
+from bci_robustness.core import BENCHMARK_PROTOCOL_VERSION, population_summary, subject_level_summary
 
 
 
@@ -102,11 +102,15 @@ def recover_results_from_checkpoints(
     checkpoint_dataset = checkpoint_dataset or inferred_dataset
     pipeline = pipeline or inferred_pipeline
     checkpoint_dir = results_dir / "checkpoints"
-    paths = sorted(checkpoint_dir.glob(f"{checkpoint_dataset}_{pipeline}_subject-*_robustness.csv"))
+    if not prefix.startswith(f"{checkpoint_dataset}_"):
+        raise ValueError(f"Prefix {prefix!r} does not begin with dataset alias {checkpoint_dataset!r}")
+    checkpoint_suffix = prefix[len(checkpoint_dataset) + 1 :]
+    pattern = f"{checkpoint_dataset}_{pipeline}_{checkpoint_suffix}_subject-*.csv"
+    paths = sorted(checkpoint_dir.glob(pattern))
     if not paths:
         raise FileNotFoundError(
-            f"No raw results file and no matching checkpoints. Looked for "
-            f"{checkpoint_dir / f'{checkpoint_dataset}_{pipeline}_subject-*_robustness.csv'}"
+            f"No raw results file and no matching versioned checkpoints. Looked for "
+            f"{checkpoint_dir / pattern}"
         )
     frames = []
     subjects = set()
@@ -114,6 +118,14 @@ def recover_results_from_checkpoints(
         frame = pd.read_csv(path)
         if frame.empty or "subject" not in frame.columns:
             raise ValueError(f"Checkpoint is empty or lacks subject column: {path}")
+        if "protocol_version" not in frame.columns:
+            raise ValueError(f"Checkpoint lacks protocol_version and cannot be safely reused: {path}")
+        versions = set(frame["protocol_version"].dropna().astype(str))
+        if versions != {BENCHMARK_PROTOCOL_VERSION}:
+            raise ValueError(
+                f"Checkpoint protocol mismatch in {path}: found {sorted(versions)}, "
+                f"expected {BENCHMARK_PROTOCOL_VERSION}"
+            )
         checkpoint_subjects = set(frame["subject"].dropna().astype(int))
         if len(checkpoint_subjects) != 1:
             raise ValueError(f"Checkpoint must contain exactly one subject: {path}")

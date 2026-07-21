@@ -43,7 +43,7 @@ make physionet-full
 
 The commands download data through MOABB/MNE, preprocess the recordings and fit both decoder pipelines. Runtime depends on the local data cache and hardware.
 
-Long runs write participant checkpoints to `results/checkpoints/`. Repeating the same command reuses compatible completed checkpoints. For unstable network connections, increase the retry count and waiting time, for example:
+Long runs write participant checkpoints to `results/checkpoints/`. Checkpoint names include the dataset, pipeline, and run suffix. Repeating the same command reuses only checkpoints with the current protocol marker and requested stressors. For unstable network connections, increase the retry count and waiting time, for example:
 
 ```bash
 python scripts/run_benchmark.py   --config configs/benchmark.yaml   --download-and-run   --dataset PhysionetMI   --subjects 29   --include-reduced-montage   --include-region-dropout   --pipeline csp_lda   --max-retries 5   --retry-wait-seconds 60
@@ -71,3 +71,7 @@ make manuscript
 ```
 
 The generated PDF is written to `manuscript/manuscript.pdf`.
+
+## Perturbation schedules
+
+The committed tables were generated with `configs/benchmark.yaml`, in which matched fold/repeat indices reuse channel indices across participants when channel order agrees. This is retained only for exact legacy reproduction. New studies should use `configs/benchmark_independent_masks.yaml`; it derives deterministic masks from participant identity, fold, repeat, fraction, and the global seed. Decoder families still receive matched masks for the same participant. A full independent-mask rerun is required before replacing the committed numerical results.

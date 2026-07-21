@@ -29,6 +29,7 @@ EXCLUDE_DIRS = {
     "moabb_data",
     "mne_data",
     "data",
+    "artifacts",
 }
 EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".zip", ".html"}
 EXCLUDE_NAME_TOKENS = [
@@ -63,7 +64,7 @@ REQUIRED_FILES = [
     "scripts/build_release_manifest.py",
     "scripts/build_release_archive.py",
     "scripts/generate_submission_readiness.py",
-    "artifacts/manifests/release_manifest.json",
+    "reports/release_manifest.json",
 ]
 REQUIRED_FIGURE_SUFFIXES = [
     "methods_pipeline_schematic.png",
@@ -100,7 +101,7 @@ def archive_members(root: Path) -> list[Path]:
 
 def audit_release(root: Path, figure_prefix: str = DEFAULT_FIGURE_PREFIX) -> dict[str, object]:
     required = [root / p for p in REQUIRED_FILES]
-    required.extend(root / "artifacts" / "generated_reports" / f"{figure_prefix}_{suffix}" for suffix in REQUIRED_FIGURE_SUFFIXES)
+    required.extend(root / "reports" / f"{figure_prefix}_{suffix}" for suffix in REQUIRED_FIGURE_SUFFIXES)
     missing = [str(p.relative_to(root)) for p in required if not p.exists()]
     bad_names = []
     for p in archive_members(root):
@@ -151,7 +152,7 @@ def build_archive(root: Path, output: Path, top_level_name: str | None = None) -
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", type=Path, default=Path("."))
-    ap.add_argument("--output", type=Path, default=Path("dist/MI_EEG_repository_simplification_v0.3.0.zip"))
+    ap.add_argument("--output", type=Path, default=Path("dist/motor-imagery-eeg-decoder-robustness-v0.3.1.zip"))
     ap.add_argument("--audit-only", action="store_true")
     args = ap.parse_args()
     root = args.root.resolve()

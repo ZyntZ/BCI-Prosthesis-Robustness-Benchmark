@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
+import hashlib
+
 import numpy as np
 import pandas as pd
 from scipy.stats import bootstrap
@@ -22,6 +24,31 @@ except Exception as exc:  # pragma: no cover
     CSP = None
     _CSP_IMPORT_ERROR = exc
 
+
+
+BENCHMARK_PROTOCOL_VERSION = "0.3.1"
+
+
+def _stable_subject_seed(random_seed: int, subject_id: str | int) -> int:
+    """Return a stable uint32 seed that includes participant identity.
+
+    Python's built-in hash is intentionally avoided because it is randomized
+    between interpreter processes. The same participant seed is shared between
+    decoder families so participant-level comparisons remain paired.
+    """
+    payload = f"{int(random_seed)}|{subject_id}".encode("utf-8")
+    return int.from_bytes(hashlib.blake2s(payload, digest_size=4).digest(), "little")
+
+
+def _dropout_rng(
+    random_seed: int, subject_id: str | int, fold: int, repeat: int, fraction: float
+) -> np.random.Generator:
+    """Create a deterministic participant-specific RNG for one channel mask."""
+    fraction_code = int(round(float(fraction) * 1_000_000))
+    seed = np.random.SeedSequence(
+        [_stable_subject_seed(random_seed, subject_id), int(fold), int(repeat), fraction_code]
+    )
+    return np.random.default_rng(seed)
 
 
 def make_csp_lda(n_components: int = 6, random_state: int = 42) -> Pipeline:
@@ -143,6 +170,7 @@ def evaluate_subject_with_dropout(
     pipeline_name: str = "csp_lda",
     montage_name: str = "all_channels",
     n_channels: int | None = None,
+    mask_seed_scope: str = "participant",
 ) -> pd.DataFrame:
     """Evaluate clean and test-time channel-dropout performance for one subject.
 
@@ -163,6 +191,10 @@ def evaluate_subject_with_dropout(
     if n_splits_eff < 2:
         raise ValueError("Need at least two samples per class for cross-validation")
 
+    if mask_seed_scope not in {"participant", "shared"}:
+        raise ValueError("mask_seed_scope must be participant or shared")
+    # Keep the cross-validation split paired across decoders. Its sensitivity must
+    # be assessed with independent reruns rather than treated as sampling variation.
     cv = StratifiedKFold(n_splits=n_splits_eff, shuffle=True, random_state=random_seed)
     rows = []
     for fold, (train_idx, test_idx) in enumerate(cv.split(X, y), start=1):
@@ -173,7 +205,12 @@ def evaluate_subject_with_dropout(
             fraction = float(fraction)
             n_repeats = 1 if fraction == 0.0 else repeats_per_fraction
             for repeat in range(n_repeats):
-                rng = np.random.default_rng(random_seed + 1000 * fold + 100 * repeat + int(100 * fraction))
+                if mask_seed_scope == "participant":
+                    rng = _dropout_rng(random_seed, subject_id, fold, repeat, fraction)
+                else:
+                    # Legacy v0.3 schedule retained only to reproduce committed tables.
+                    fraction_code = int(round(fraction * 100))
+                    rng = np.random.default_rng(random_seed + 1000 * fold + 100 * repeat + fraction_code)
                 X_eval, dropped = apply_channel_dropout(X[test_idx], fraction, rng)
                 auc, bal_acc, brier, ece = _score_fold(clf, X_eval, y_test)
                 rows.append(
@@ -191,6 +228,8 @@ def evaluate_subject_with_dropout(
                         "roc_auc": auc,
                         "brier_score": brier,
                         "ece": ece,
+                        "protocol_version": BENCHMARK_PROTOCOL_VERSION,
+                        "mask_seed_scope": mask_seed_scope,
                     }
                 )
     return pd.DataFrame(rows)

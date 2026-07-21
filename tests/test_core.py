@@ -10,6 +10,7 @@ from bci_robustness.core import (
     evaluate_subject_cross_session,
     evaluate_subject_reduced_montages,
     evaluate_subject_with_dropout,
+    _dropout_rng,
     select_channels,
     subject_level_summary,
 )
@@ -149,3 +150,35 @@ def test_cross_session_uses_sorted_session_labels(monkeypatch):
     out = evaluate_subject_cross_session(X, y, metadata, subject_id=1)
     assert set(out["session_train"]) == {"session_1"}
     assert set(out["session_test"]) == {"session_2"}
+
+
+def test_participant_specific_dropout_masks_are_reproducible_and_distinct():
+    first = _dropout_rng(42, 1, 1, 0, 0.3).choice(64, size=19, replace=False)
+    repeated = _dropout_rng(42, 1, 1, 0, 0.3).choice(64, size=19, replace=False)
+    other_subject = _dropout_rng(42, 2, 1, 0, 0.3).choice(64, size=19, replace=False)
+    assert np.array_equal(first, repeated)
+    assert not np.array_equal(np.sort(first), np.sort(other_subject))
+
+
+def test_dropout_evaluator_records_protocol_and_mask_scope(monkeypatch):
+    class DummyClassifier:
+        def fit(self, X, y):
+            return self
+
+    monkeypatch.setattr("bci_robustness.core.make_pipeline_by_name", lambda *args, **kwargs: DummyClassifier())
+    monkeypatch.setattr("bci_robustness.core._score_fold", lambda clf, X, y: (0.7, 0.6, 0.2, 0.1))
+    X = np.ones((8, 6, 12))
+    y = np.array([0, 1, 0, 1, 0, 1, 0, 1])
+    out = evaluate_subject_with_dropout(
+        X, y, subject_id=7, dropout_fractions=(0.0, 0.5),
+        repeats_per_fraction=1, n_splits=2, mask_seed_scope="participant",
+    )
+    assert set(out["protocol_version"]) == {"0.3.1"}
+    assert set(out["mask_seed_scope"]) == {"participant"}
+
+
+def test_dropout_evaluator_rejects_unknown_mask_scope():
+    X = np.ones((8, 3, 12))
+    y = np.array([0, 1, 0, 1, 0, 1, 0, 1])
+    with pytest.raises(ValueError, match="mask_seed_scope"):
+        evaluate_subject_with_dropout(X, y, subject_id=1, n_splits=2, mask_seed_scope="global")

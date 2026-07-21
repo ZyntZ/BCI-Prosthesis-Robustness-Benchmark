@@ -39,6 +39,7 @@ from bci_robustness.core import (
     evaluate_subject_with_dropout,
     population_summary,
     subject_level_summary,
+    BENCHMARK_PROTOCOL_VERSION,
 )
 
 DATASET_REGISTRY = {
@@ -135,6 +136,11 @@ def checkpoint_is_compatible(
     """
     if "stressor" not in df.columns:
         return False, "missing stressor column"
+    if "protocol_version" not in df.columns:
+        return False, "missing protocol_version column"
+    versions = set(df["protocol_version"].dropna().astype(str))
+    if versions != {BENCHMARK_PROTOCOL_VERSION}:
+        return False, f"protocol version mismatch: found {sorted(versions)}, expected {BENCHMARK_PROTOCOL_VERSION}"
     present = set(df["stressor"].dropna().astype(str))
     needed = requested_stressors(include_reduced_montage, include_region_dropout, include_cross_session)
     missing = sorted(needed - present)
@@ -203,6 +209,7 @@ def run_one_subject(
     dropout_cfg = config["stressors"]["channel_dropout"]
     fractions = [0.0] + [float(x) for x in dropout_cfg["dropout_fractions"]]
     repeats = int(dropout_cfg["repeats_per_fraction"])
+    mask_seed_scope = str(dropout_cfg.get("mask_seed_scope", "participant"))
     csp_components = int(pipeline_config(config, pipeline_name).get("csp_components", 6))
 
     epochs, y, metadata = paradigm.get_data(dataset=dataset, subjects=[subject], return_epochs=True)
@@ -222,6 +229,7 @@ def run_one_subject(
         pipeline_name=pipeline_name,
         montage_name="all_channels",
         n_channels=X.shape[1],
+        mask_seed_scope=mask_seed_scope,
     )
     frames.append(dropout)
 
@@ -268,6 +276,8 @@ def run_one_subject(
             frames.append(cross)
 
     out = pd.concat(frames, ignore_index=True)
+    out["protocol_version"] = BENCHMARK_PROTOCOL_VERSION
+    out["mask_seed_scope"] = mask_seed_scope
     out.insert(0, "dataset", dataset.code)
     return out
 
@@ -307,7 +317,7 @@ def run_real_data(
     consecutive_failures = 0
 
     for subject in subject_list:
-        ckpt = checkpoint_dir / f"{dataset_name}_{pipeline_name}_subject-{subject:03d}_robustness.csv"
+        ckpt = checkpoint_dir / f"{dataset_name}_{pipeline_name}_{suffix}_subject-{subject:03d}.csv"
         df = None
         if ckpt.exists() and not overwrite:
             candidate = pd.read_csv(ckpt)

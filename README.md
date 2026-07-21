@@ -1,4 +1,4 @@
-# Motor-imagery EEG decoding under channel zeroing
+# Motor-Imagery EEG Decoder Robustness Benchmark
 
 This repository compares two offline binary motor-imagery decoders:
 
@@ -13,7 +13,14 @@ The evaluation uses PhysioNet EEG Motor Movement/Imagery and BNCI2014-001. It te
 
 In the included PhysioNet participant summaries ($n=109$), 50% random channel zeroing changed mean ROC-AUC from 0.655 to 0.527 for CSP–LDA (mean paired change −0.128, 95% CI −0.153 to −0.102) and from 0.675 to 0.554 for Riemann–LR (−0.121, 95% CI −0.141 to −0.101).
 
-These estimates are conditional on one shuffled cross-validation split and one deterministic channel-mask schedule. The mask seed does not include participant identity, so matched fold/repeat indices reuse the same channel indices across participants when channel order agrees. Alternative splits and mask schedules were not evaluated.
+These estimates are conditional on one shuffled cross-validation split and one deterministic channel-mask schedule. The mask seed does not include participant identity, so matched fold/repeat indices reuse the same channel indices across participants when channel order agrees. Alternative splits and mask schedules were not evaluated. These committed estimates therefore describe one fixed perturbation schedule, not the distribution of performance over possible schedules.
+
+## Protocols
+
+- `configs/benchmark.yaml` is the **legacy reproduction protocol** for the committed v0.3 result tables. It deliberately retains the shared cross-participant mask schedule.
+- `configs/benchmark_independent_masks.yaml` is the **recommended protocol for new inference**. Its channel masks are deterministic but participant-specific, while matching masks between decoder families within each participant.
+
+Do not combine outputs from these protocols. The runner records a protocol version and mask-seed scope, and rejects unversioned checkpoints. The manuscript reports only the legacy results; claims about stability under independent masks require a full rerun.
 
 ## Check the included outputs
 
@@ -42,6 +49,8 @@ python -m pip install -e ".[eeg]"
 make bnci-full
 make physionet-full
 ```
+
+The Makefile targets reproduce the committed legacy protocol. For a new analysis, pass `--config configs/benchmark_independent_masks.yaml` to `scripts/run_benchmark.py`.
 
 The commands download data through MOABB/MNE and may take several hours. Participant checkpoints allow interrupted runs to resume. See `REPRODUCIBILITY.md`.
 

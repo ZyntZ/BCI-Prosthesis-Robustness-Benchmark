@@ -1,4 +1,4 @@
-project_name: bci_prosthesis_robustness_benchmark
+project_name: motor_imagery_eeg_robustness_independent_masks
 moabb_data_dir: moabb_data
 results_dir: results
 random_seed: 42
@@ -26,8 +26,7 @@ stressors:
     - 0.3
     - 0.5
     repeats_per_fraction: 10
-    mask_seed_scope: shared
-    # Legacy schedule required to reproduce v0.3 result tables. Use benchmark_independent_masks.yaml for new inference.
+    mask_seed_scope: participant
   reduced_montage:
     enabled: true
     montages:

@@ -1,9 +1,9 @@
 PYTHON ?= python
 CONFIG ?= configs/benchmark.yaml
 RESULTS_DIR ?= results
-REPORTS_DIR ?= artifacts/generated_reports
-VALIDATION_DIR ?= artifacts/validation
-MANIFEST_DIR ?= artifacts/manifests
+REPORTS_DIR ?= reports
+VALIDATION_DIR ?= reports
+MANIFEST_DIR ?= reports
 PREFIX ?= PhysionetMI_PhysionetMI_all_riemann_lr
 EXPECTED_SUBJECTS ?= 109
 PHYSIONET_FULL_PREFIXES ?= PhysionetMI_PhysionetMI_all_riemann_lr PhysionetMI_PhysionetMI_all_csp_lda

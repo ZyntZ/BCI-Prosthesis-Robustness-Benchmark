@@ -7,7 +7,7 @@
     "PhysionetMI_PhysionetMI_all_csp_lda"
   ],
   "ready": true,
-  "n_checks": 55,
+  "n_checks": 54,
   "n_failed_errors": 0,
   "n_failed_warnings": 2,
   "note": "test-generated readiness summary"
