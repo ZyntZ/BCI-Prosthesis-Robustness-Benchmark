@@ -112,11 +112,49 @@ def difference_in_degradation(pairs: pd.DataFrame) -> tuple[pd.DataFrame, pd.Dat
     return summary, nonclean
 
 
-def tex_table(df):
-    cols=['condition','n_subjects','mean_paired_difference_csp_minus_riemann','ci95_low','ci95_high','cohens_dz','paired_t_p_value_bh_fdr','wilcoxon_p_value_bh_fdr','proportion_csp_better']
-    x=df[cols].copy()
-    for c in cols[2:]: x[c]=x[c].map(lambda v:'NA' if pd.isna(v) else f'{v:.3f}')
-    return x.to_latex(index=False,escape=True,caption='Subject-paired ROC-AUC comparison of CSP-LDA and Riemann-LR.',label='tab:pipeline-comparison')
+def tex_table(df: pd.DataFrame) -> str:
+    """Render the comparison table without pandas' optional Jinja2 dependency."""
+    cols = [
+        'condition', 'n_subjects', 'mean_paired_difference_csp_minus_riemann',
+        'ci95_low', 'ci95_high', 'cohens_dz', 'paired_t_p_value_bh_fdr',
+        'wilcoxon_p_value_bh_fdr', 'proportion_csp_better',
+    ]
+
+    def escape(value: object) -> str:
+        replacements = {
+            '\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$',
+            '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
+            '~': r'\textasciitilde{}', '^': r'\textasciicircum{}',
+        }
+        return ''.join(replacements.get(char, char) for char in str(value))
+
+    rows = []
+    for row in df[cols].itertuples(index=False, name=None):
+        cells = []
+        for index, value in enumerate(row):
+            if pd.isna(value):
+                cells.append('NA')
+            elif index >= 2:
+                cells.append(f'{float(value):.3f}')
+            else:
+                cells.append(escape(value))
+        rows.append(' & '.join(cells) + r' \\')
+
+    header = ' & '.join(escape(column) for column in cols) + r' \\'
+    return '\n'.join([
+        r'\begin{table}',
+        r'\caption{Subject-paired ROC-AUC comparison of CSP-LDA and Riemann-LR.}',
+        r'\label{tab:pipeline-comparison}',
+        r'\begin{tabular}{lrrrrrrrr}',
+        r'\toprule',
+        header,
+        r'\midrule',
+        *rows,
+        r'\bottomrule',
+        r'\end{tabular}',
+        r'\end{table}',
+        '',
+    ])
 
 
 def dataframe_to_markdown(df: pd.DataFrame) -> str:

@@ -29,6 +29,25 @@ def test_markdown_renderer_has_no_optional_tabulate_dependency():
     assert "| clean | -0.02 |" in rendered
 
 
+def test_latex_renderer_has_no_optional_jinja_dependency(monkeypatch):
+    frame = pd.DataFrame({
+        "condition": ["dropout_0.5"],
+        "n_subjects": [109],
+        "mean_paired_difference_csp_minus_riemann": [-0.027],
+        "ci95_low": [-0.048],
+        "ci95_high": [-0.007],
+        "cohens_dz": [-0.251],
+        "paired_t_p_value_bh_fdr": [0.014],
+        "wilcoxon_p_value_bh_fdr": [0.028],
+        "proportion_csp_better": [48 / 109],
+    })
+    monkeypatch.setattr(pd.DataFrame, "to_latex", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("to_latex called")))
+    rendered = compare_physionet_pipelines.tex_table(frame)
+    assert r"dropout\_0.5" in rendered
+    assert r"\begin{tabular}{lrrrrrrrr}" in rendered
+    assert "-0.027" in rendered
+
+
 def test_committed_physionet_comparison_is_subject_paired_and_reproducible():
     csp = pd.read_csv(ROOT / "results" / "PhysionetMI_PhysionetMI_all_csp_lda_subject_summary.csv")
     riemann = pd.read_csv(ROOT / "results" / "PhysionetMI_PhysionetMI_all_riemann_lr_subject_summary.csv")

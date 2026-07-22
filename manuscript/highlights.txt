@@ -2,3 +2,4 @@
 • Riemannian logistic regression had higher ROC-AUC under channel dropout.
 • Nine-channel estimates were close to full-montage estimates; equivalence was not tested.
 • The dropout dose-response was nonlinear over the tested fractions.
+• Stability across independent participant-specific masks remains to be tested.

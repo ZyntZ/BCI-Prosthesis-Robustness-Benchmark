@@ -45,24 +45,17 @@ def ensure_release_manifest_exists():
 
 
 def ensure_submission_readiness_exists():
-    """Create readiness artifacts from committed reports for archive-audit tests."""
-    spec = importlib.util.spec_from_file_location("generate_submission_readiness", ROOT / "scripts" / "generate_submission_readiness.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    checks = mod.build_checks(ROOT, ROOT / "results", ROOT / "reports", mod.DEFAULT_PREFIXES)
-    n_failed_errors = int(((checks["severity"] == "error") & (~checks["passed"])).sum())
-    summary = {
-        "generated_at_utc": "test",
-        "prefixes": mod.DEFAULT_PREFIXES,
-        "ready": n_failed_errors == 0,
-        "n_checks": int(len(checks)),
-        "n_failed_errors": n_failed_errors,
-        "n_failed_warnings": int(((checks["severity"] == "warning") & (~checks["passed"])).sum()),
-        "note": "test-generated readiness summary",
-    }
-    checks.to_csv(ROOT / "reports" / "submission_readiness_checks.csv", index=False)
-    (ROOT / "reports" / "submission_readiness_summary.json").write_text(__import__("json").dumps(summary, indent=2) + "\n", encoding="utf-8")
-    mod.write_markdown(summary, checks, ROOT / "SUBMISSION_READINESS.md")
+    """Generate readiness files only when a fixture checkout does not contain them."""
+    summary_path = ROOT / "reports" / "submission_readiness_summary.json"
+    checks_path = ROOT / "reports" / "submission_readiness_checks.csv"
+    readiness_path = ROOT / "SUBMISSION_READINESS.md"
+    if summary_path.exists() and checks_path.exists() and readiness_path.exists():
+        return
+    result = subprocess.run(
+        [sys.executable, "scripts/generate_submission_readiness.py"],
+        cwd=ROOT, capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_cli_help_smoke_for_all_scripts():

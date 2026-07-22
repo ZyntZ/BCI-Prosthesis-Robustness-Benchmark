@@ -27,7 +27,7 @@ COMPARISON_OUTPUTS = [
     "results/PhysionetMI_csp_lda_vs_riemann_lr_paired_comparison.csv",
     "results/PhysionetMI_csp_lda_vs_riemann_lr_paired_subject_differences.csv",
 ]
-HASH_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".csv", ".json", ".cff", ".png", ".svg", ".tex"}
+HASH_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".csv", ".json", ".cff", ".png", ".svg", ".pdf", ".tex"}
 EXCLUDE_PARTS = {".git", "__pycache__", ".pytest_cache", "checkpoints", ".venv", "venv", "env", ".env", "moabb_data", "mne_data", "data", "dist"}
 PACKAGE_NAMES = ["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "mne", "moabb", "pyriemann", "matplotlib", "plotly", "pytest", "PyYAML"]
 EXPECTED_STAT_OUTPUT_SUFFIXES = ["statistical_paired_effects.csv", "statistical_report_table.csv"]

@@ -50,3 +50,19 @@ def test_default_release_scope_includes_full_physionet_and_uses_its_figures():
     full = "PhysionetMI_PhysionetMI_all_riemann_lr"
     assert full in build_release_manifest.DEFAULT_PREFIXES
     assert build_release_manifest.METHODS_FIGURE_PREFIXES == [full]
+
+
+
+def test_validation_summary_is_read_from_canonical_artifact_path(tmp_path):
+    canonical = tmp_path / "artifacts" / "validation"
+    canonical.mkdir(parents=True)
+    (canonical / "example_validation_summary.json").write_text(
+        json.dumps({"n_failed_errors": 0}), encoding="utf-8"
+    )
+    sibling = tmp_path / "validation"
+    sibling.mkdir()
+    (sibling / "example_validation_summary.json").write_text(
+        json.dumps({"n_failed_errors": 1}), encoding="utf-8"
+    )
+    summary = build_release_manifest.read_validation_summary(tmp_path, "example")
+    assert summary == {"n_failed_errors": 0}

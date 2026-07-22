@@ -52,4 +52,4 @@ manuscript_declarations,physionet_license_named,error,True,Required manuscript d
 manuscript_declarations,bnci_license_named,error,True,Required manuscript declaration is present,manuscript/manuscript.tex,,,,,,
 manuscript_declarations,competing_interests_declaration_present,warning,False,Author confirmation is required before submission,manuscript/manuscript.tex,,,,,,
 manuscript_declarations,permanent_software_doi_present,warning,False,Archive the release and add its DOI before submission,CITATION.cff,,,,,,
-release_manifest,release_manifest_ready,error,True,Release manifest reports release_ready=true,artifacts/manifests/release_manifest.json,,,,,,
+release_manifest,release_manifest_ready,error,True,Release manifest reports release_ready=true,reports/release_manifest.json,,,,,,
