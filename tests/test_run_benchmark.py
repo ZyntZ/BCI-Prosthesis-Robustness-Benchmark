@@ -294,6 +294,86 @@ def test_checkpoint_compatibility_rejects_different_mask_scope():
     assert "mask seed scope mismatch" in reason
 
 
+def test_checkpoint_compatibility_ignores_not_applicable_mask_scope():
+    module = load_run_benchmark_module()
+    import pandas as pd
+    frame = pd.DataFrame({
+        "stressor": ["clean", "channel_dropout", "region_dropout", "cross_session"],
+        "protocol_version": [module.BENCHMARK_PROTOCOL_VERSION] * 4,
+        "mask_seed_scope": ["participant", "participant", "not_applicable", "not_applicable"],
+    })
+    ok, reason = module.checkpoint_is_compatible(
+        frame, False, True, True, expected_mask_seed_scope="participant"
+    )
+    assert ok
+    assert reason == "ok"
+
+
+def test_checkpoint_compatibility_rejects_mask_scope_on_nonrandom_stressors():
+    module = load_run_benchmark_module()
+    import pandas as pd
+    frame = pd.DataFrame({
+        "stressor": ["clean", "channel_dropout", "region_dropout"],
+        "protocol_version": [module.BENCHMARK_PROTOCOL_VERSION] * 3,
+        "mask_seed_scope": ["participant", "participant", "participant"],
+    })
+    ok, reason = module.checkpoint_is_compatible(
+        frame, False, True, False, expected_mask_seed_scope="participant"
+    )
+    assert not ok
+    assert "not_applicable" in reason
+
+
+def test_run_one_subject_preserves_stressor_specific_mask_scope(monkeypatch):
+    module = load_run_benchmark_module()
+    import numpy as np
+    import pandas as pd
+
+    class Epochs:
+        ch_names = ["C3", "Cz", "C4"]
+        def get_data(self, copy=True):
+            return np.ones((4, 3, 8))
+
+    class Paradigm:
+        def get_data(self, dataset, subjects, return_epochs):
+            return Epochs(), np.array([0, 1, 0, 1]), pd.DataFrame({"session": ["1", "1", "2", "2"]})
+
+    class Dataset:
+        code = "demo"
+
+    def frame(stressor, scope):
+        return pd.DataFrame({
+            "subject": [1], "pipeline": ["csp_lda"], "stressor": [stressor],
+            "montage": ["all_channels"], "fold": [1], "dropout_fraction": [0.0],
+            "repeat": [0], "n_channels": [3], "n_dropped_channels": [0],
+            "balanced_accuracy": [0.5], "roc_auc": [0.5], "brier_score": [0.25],
+            "ece": [0.0], "protocol_version": [module.BENCHMARK_PROTOCOL_VERSION],
+            "mask_seed_scope": [scope],
+        })
+
+    monkeypatch.setattr(module, "evaluate_subject_with_dropout", lambda **kwargs: frame("clean", "participant"))
+    monkeypatch.setattr(module, "evaluate_subject_region_dropout", lambda **kwargs: frame("region_dropout", "not_applicable"))
+    monkeypatch.setattr(module, "evaluate_subject_cross_session", lambda **kwargs: frame("cross_session", "not_applicable"))
+    config = {
+        "random_seed": 42,
+        "pipelines": [{"name": "csp_lda", "csp_components": 3}],
+        "stressors": {
+            "channel_dropout": {"dropout_fractions": [0.5], "repeats_per_fraction": 1, "mask_seed_scope": "participant"},
+            "cross_session": {"enabled": True},
+        },
+    }
+    out = module.run_one_subject(
+        Dataset(), Paradigm(), 1, config, include_reduced_montage=False,
+        include_region_dropout=True, include_cross_session=True,
+    )
+    scopes = out.groupby("stressor")["mask_seed_scope"].first().to_dict()
+    assert scopes == {
+        "clean": "participant",
+        "cross_session": "not_applicable",
+        "region_dropout": "not_applicable",
+    }
+
+
 def test_checkpoint_compatibility_accepts_matching_mask_scope():
     module = load_run_benchmark_module()
     import pandas as pd

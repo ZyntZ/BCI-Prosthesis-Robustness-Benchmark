@@ -161,6 +161,23 @@ def test_csp_reduced_montages_clamp_components_to_channel_count():
 
 
 
+def test_reduced_montage_records_mask_scope_as_not_applicable(monkeypatch):
+    class DummyClassifier:
+        def fit(self, X, y):
+            return self
+
+    monkeypatch.setattr("bci_robustness.core.make_pipeline_by_name", lambda *args, **kwargs: DummyClassifier())
+    monkeypatch.setattr("bci_robustness.core._score_fold", lambda clf, X, y: (0.7, 0.6, 0.2, 0.1))
+    X = np.ones((8, 3, 12))
+    y = np.array([0, 1, 0, 1, 0, 1, 0, 1])
+    out = evaluate_subject_reduced_montages(
+        X, y, ["C3", "Cz", "C4"], subject_id=1,
+        montages={"motor_core": ["C3", "Cz", "C4"]},
+        n_splits=2,
+    )
+    assert set(out["mask_seed_scope"]) == {"not_applicable"}
+
+
 def test_region_dropout_records_protocol_provenance(monkeypatch):
     class DummyClassifier:
         def fit(self, X, y):

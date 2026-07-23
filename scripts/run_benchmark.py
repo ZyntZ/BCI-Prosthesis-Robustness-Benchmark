@@ -145,11 +145,23 @@ def checkpoint_is_compatible(
     if expected_mask_seed_scope is not None:
         if "mask_seed_scope" not in df.columns:
             return False, "missing mask_seed_scope column"
-        scopes = set(df["mask_seed_scope"].dropna().astype(str))
+        dropout_rows = df.loc[df["stressor"].isin(["clean", "channel_dropout"])]
+        if dropout_rows.empty:
+            return False, "no clean or channel_dropout rows to check mask_seed_scope"
+        scopes = set(dropout_rows["mask_seed_scope"].dropna().astype(str))
         if scopes != {expected_mask_seed_scope}:
             return False, (
                 f"mask seed scope mismatch: found {sorted(scopes)}, "
                 f"expected {expected_mask_seed_scope}"
+            )
+        other_rows = df.loc[
+            df["stressor"].isin(["reduced_montage", "region_dropout", "cross_session"])
+        ]
+        other_scopes = set(other_rows["mask_seed_scope"].dropna().astype(str))
+        if not other_rows.empty and other_scopes != {"not_applicable"}:
+            return False, (
+                "mask seed scope must be not_applicable outside clean/channel dropout; "
+                f"found {sorted(other_scopes)}"
             )
     present = set(df["stressor"].dropna().astype(str))
     needed = requested_stressors(include_reduced_montage, include_region_dropout, include_cross_session)
@@ -287,7 +299,10 @@ def run_one_subject(
 
     out = pd.concat(frames, ignore_index=True)
     out["protocol_version"] = BENCHMARK_PROTOCOL_VERSION
-    out["mask_seed_scope"] = mask_seed_scope
+    if "mask_seed_scope" not in out.columns:
+        out["mask_seed_scope"] = mask_seed_scope
+    else:
+        out["mask_seed_scope"] = out["mask_seed_scope"].fillna(mask_seed_scope)
     out.insert(0, "dataset", dataset.code)
     return out
 

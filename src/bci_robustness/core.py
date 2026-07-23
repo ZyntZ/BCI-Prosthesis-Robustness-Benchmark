@@ -268,6 +268,7 @@ def evaluate_subject_reduced_montages(
             n_channels=X_sel.shape[1],
         )
         df["stressor"] = "reduced_montage"
+        df["mask_seed_scope"] = "not_applicable"
         df["selected_channels"] = ",".join(selected_names)
         frames.append(df)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
