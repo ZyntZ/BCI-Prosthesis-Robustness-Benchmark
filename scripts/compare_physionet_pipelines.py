@@ -43,6 +43,16 @@ def compare(csp,riem):
     notes=['Named region-dropout conditions were matched directly; no regional rows were averaged or imputed.']
     key=['subject','condition']
     if csp.duplicated(key).any() or riem.duplicated(key).any(): raise ValueError('Non-unique subject-condition rows after harmonization')
+    csp_keys = pd.MultiIndex.from_frame(csp[key])
+    riemann_keys = pd.MultiIndex.from_frame(riem[key])
+    missing_from_riemann = csp_keys.difference(riemann_keys)
+    missing_from_csp = riemann_keys.difference(csp_keys)
+    if len(missing_from_riemann) or len(missing_from_csp):
+        raise ValueError(
+            'Decoder summaries contain different subject-condition pairs '
+            f'(missing from Riemann-LR: {len(missing_from_riemann)}; '
+            f'missing from CSP-LDA: {len(missing_from_csp)})'
+        )
     m=csp[key+['roc_auc']].merge(riem[key+['roc_auc']],on=key,suffixes=('_csp','_riemann'),validate='one_to_one')
     rows=[]
     for cond,g in m.groupby('condition',sort=True):

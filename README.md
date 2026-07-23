@@ -50,7 +50,7 @@ make bnci-full
 make physionet-full
 ```
 
-Benchmark Makefile targets use `configs/benchmark_independent_masks.yaml` by default. To reproduce the committed legacy schedule explicitly, use `make legacy-bnci-full` or `make legacy-physionet-full`. Use a separate output directory or archive the committed tables before any full rerun; outputs from the two mask schedules must not be merged.
+Benchmark Makefile targets and `scripts/run_benchmark.py` use `configs/benchmark_independent_masks.yaml` by default. To reproduce the committed legacy schedule explicitly, use `make legacy-bnci-full` or `make legacy-physionet-full`. Use a separate output directory or archive the committed tables before any full rerun; outputs from the two mask schedules must not be merged.
 
 The commands download data through MOABB/MNE and may take several hours. Participant checkpoints allow interrupted runs to resume. See `REPRODUCIBILITY.md`.
 

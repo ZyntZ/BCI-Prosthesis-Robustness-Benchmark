@@ -434,7 +434,7 @@ def write_outputs(results: pd.DataFrame, config: dict, dataset_name: str, suffix
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=Path, default=ROOT / "configs" / "benchmark.yaml")
+    parser.add_argument("--config", type=Path, default=ROOT / "configs" / "benchmark_independent_masks.yaml")
     parser.add_argument("--dry-run", action="store_true", help="Inspect plan without downloading data.")
     parser.add_argument("--download-and-run", action="store_true", help="Download public EEG data and run benchmark.")
     parser.add_argument("--dataset", default="PhysionetMI")
