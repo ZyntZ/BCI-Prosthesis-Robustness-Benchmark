@@ -172,16 +172,84 @@ def dataframe_to_markdown(df: pd.DataFrame) -> str:
     return "\n".join(rows)
 
 
-def main():
-    ap=argparse.ArgumentParser(); ap.add_argument('--results-dir',type=Path,default=Path('results')); ap.add_argument('--reports-dir',type=Path,default=Path('reports')); ap.add_argument('--csp-prefix',default='PhysionetMI_PhysionetMI_all_csp_lda'); ap.add_argument('--riemann-prefix',default='PhysionetMI_PhysionetMI_all_riemann_lr'); ap.add_argument('--output-prefix',default='PhysionetMI_csp_lda_vs_riemann_lr'); a=ap.parse_args()
-    c=pd.read_csv(a.results_dir/f'{a.csp_prefix}_subject_summary.csv'); r=pd.read_csv(a.results_dir/f'{a.riemann_prefix}_subject_summary.csv')
-    table,pairs,notes=compare(c,r); degradation,degradation_subjects=difference_in_degradation(pairs); a.reports_dir.mkdir(parents=True,exist_ok=True)
-    csv=a.results_dir/f'{a.output_prefix}_paired_comparison.csv'; paircsv=a.results_dir/f'{a.output_prefix}_paired_subject_differences.csv'; degradation_csv=a.results_dir/f'{a.output_prefix}_difference_in_degradation.csv'; degradation_subject_csv=a.results_dir/f'{a.output_prefix}_difference_in_degradation_subjects.csv'; tex=a.reports_dir/f'{a.output_prefix}_paired_comparison.tex'; md=a.reports_dir/f'{a.output_prefix}_paired_comparison.md'; val=a.reports_dir/f'{a.output_prefix}_validation.json'; manifest=a.results_dir/f'{a.output_prefix}_manifest.json'
-    table.to_csv(csv,index=False); pairs.assign(paired_difference_csp_minus_riemann=pairs.roc_auc_csp-pairs.roc_auc_riemann).to_csv(paircsv,index=False); degradation.to_csv(degradation_csv,index=False); degradation_subjects.to_csv(degradation_subject_csv,index=False); tex.write_text(tex_table(table),encoding='utf-8')
-    limitation=('The comparison is offline and subject-paired. Named left, midline, and right regional-dropout conditions were matched directly; no missing observations were imputed.')
-    md.write_text('# Paired decoder comparison\n\nPositive differences favor CSP-LDA. Tests are subject-paired; Benjamini-Hochberg correction is across compared conditions.\n\n'+dataframe_to_markdown(table)+'\n\n## Limitation\n\n'+limitation+'\n',encoding='utf-8')
-    validation={'passed':bool(len(table)==10 and table.n_subjects.eq(109).all()),'n_conditions':int(len(table)),'subjects_per_condition':{x.condition:int(x.n_subjects) for x in table.itertuples()},'harmonization_notes':notes,'limitation':limitation}
-    val.write_text(json.dumps(validation,indent=2)+'\n'); manifest.write_text(json.dumps({'sources':[str(a.results_dir/f'{a.csp_prefix}_subject_summary.csv'),str(a.results_dir/f'{a.riemann_prefix}_subject_summary.csv')],'outputs':[str(csv),str(paircsv),str(degradation_csv),str(degradation_subject_csv),str(tex),str(md),str(val)],'no_imputation':True,'validation_passed':validation['passed']},indent=2)+'\n')
-    print(json.dumps(validation,indent=2));
-    if not validation['passed']: raise SystemExit(1)
-if __name__=='__main__': main()
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--results-dir", type=Path, default=Path("results"))
+    ap.add_argument("--reports-dir", type=Path, default=Path("reports"))
+    ap.add_argument("--csp-prefix", default="PhysionetMI_PhysionetMI_all_csp_lda")
+    ap.add_argument("--riemann-prefix", default="PhysionetMI_PhysionetMI_all_riemann_lr")
+    ap.add_argument("--output-prefix", default="PhysionetMI_csp_lda_vs_riemann_lr")
+    args = ap.parse_args()
+
+    csp_path = args.results_dir / f"{args.csp_prefix}_subject_summary.csv"
+    riemann_path = args.results_dir / f"{args.riemann_prefix}_subject_summary.csv"
+    csp = pd.read_csv(csp_path)
+    riemann = pd.read_csv(riemann_path)
+    table, pairs, notes = compare(csp, riemann)
+    degradation, degradation_subjects = difference_in_degradation(pairs)
+    args.reports_dir.mkdir(parents=True, exist_ok=True)
+
+    csv_path = args.results_dir / f"{args.output_prefix}_paired_comparison.csv"
+    pair_path = args.results_dir / f"{args.output_prefix}_paired_subject_differences.csv"
+    degradation_path = args.results_dir / f"{args.output_prefix}_difference_in_degradation.csv"
+    degradation_subject_path = args.results_dir / f"{args.output_prefix}_difference_in_degradation_subjects.csv"
+    tex_path = args.reports_dir / f"{args.output_prefix}_paired_comparison.tex"
+    markdown_path = args.reports_dir / f"{args.output_prefix}_paired_comparison.md"
+    validation_path = args.reports_dir / f"{args.output_prefix}_validation.json"
+    manifest_path = args.results_dir / f"{args.output_prefix}_manifest.json"
+
+    table.to_csv(csv_path, index=False)
+    pairs.assign(
+        paired_difference_csp_minus_riemann=pairs.roc_auc_csp - pairs.roc_auc_riemann
+    ).to_csv(pair_path, index=False)
+    degradation.to_csv(degradation_path, index=False)
+    degradation_subjects.to_csv(degradation_subject_path, index=False)
+    tex_path.write_text(tex_table(table), encoding="utf-8")
+
+    limitation = (
+        "The comparison is offline and subject-paired. Named left, midline, and "
+        "right regional-dropout conditions were matched directly; no missing "
+        "observations were imputed."
+    )
+    markdown = (
+        "# Paired decoder comparison\n\n"
+        "Positive differences favor CSP-LDA. Tests are subject-paired; "
+        "Benjamini-Hochberg correction is across compared conditions.\n\n"
+        f"{dataframe_to_markdown(table)}\n\n"
+        f"## Limitation\n\n{limitation}\n"
+    )
+    markdown_path.write_text(markdown, encoding="utf-8")
+
+    expected_conditions = set(condition_frame(csp)["condition"])
+    validation = {
+        "passed": bool(
+            set(table["condition"]) == expected_conditions
+            and table["n_subjects"].nunique() == 1
+            and int(table["n_subjects"].iloc[0]) == int(pairs["subject"].nunique())
+        ),
+        "n_conditions": int(len(table)),
+        "subjects_per_condition": {
+            row.condition: int(row.n_subjects) for row in table.itertuples()
+        },
+        "harmonization_notes": notes,
+        "limitation": limitation,
+    }
+    validation_path.write_text(json.dumps(validation, indent=2) + "\n", encoding="utf-8")
+    manifest = {
+        "sources": [str(csp_path), str(riemann_path)],
+        "outputs": [
+            str(csv_path), str(pair_path), str(degradation_path),
+            str(degradation_subject_path), str(tex_path), str(markdown_path),
+            str(validation_path),
+        ],
+        "no_imputation": True,
+        "validation_passed": validation["passed"],
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(validation, indent=2))
+    if not validation["passed"]:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

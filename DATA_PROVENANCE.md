@@ -1,6 +1,6 @@
 # Data provenance
 
-This repository contains code and derived benchmark outputs derived from EEG datasets accessed through MOABB/MNE wrappers.
+This repository contains code and benchmark outputs derived from EEG datasets accessed through MOABB/MNE wrappers.
 
 Included BNCI2014-001 outputs:
 
@@ -16,6 +16,10 @@ Raw EEG data are not bundled. Reproduction requires downloading datasets through
 - This repository redistributes neither raw EEG nor participant identifiers. The analyses use data obtained through MOABB/MNE and publish derived numerical benchmark outputs.
 - The public PhysioNet page, BNCI Horizon 2020 dataset card, and BNCI2014-001 description reviewed for this release do not state original ethics-committee names, approval identifiers, or consent wording. These details are therefore not inferred. Questions requiring acquisition-level documentation should be directed to the original data custodians.
 
+
+## Dataset identifiers in result tables
+
+MOABB exposes the PhysioNet dataset class as `PhysionetMI` and reports its internal dataset code as `PhysionetMotorImagery`. Result filenames use the class alias; the `dataset` column in committed CSV files retains the MOABB code. Both identifiers refer to the same PhysioNet EEG Motor Movement/Imagery dataset.
 
 ## Full PhysioNet release outputs
 
